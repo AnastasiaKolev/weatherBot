@@ -22,6 +22,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
     private Users users = new Users();
     private EmojiService emoji = new EmojiService();
+    private String token = null;
+    private String username = null;
 
     // for forecast, Date to text formatter
     private static final DateTimeFormatter dateFormatterFromDate = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -29,6 +31,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     TelegramBot() {
         super();
+
+        Credentials creds = Credentials.getInstance();
+        this.token = creds.getBotToken();
+        this.username = creds.getBotUsername();
+
         startAlertTimers();
     }
 
@@ -448,10 +455,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     public String getBotUsername() {
-        return "";
+        return username;
     }
 
     public String getBotToken() {
-        return "";
+        return token;
     }
 }

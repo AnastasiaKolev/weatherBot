@@ -13,20 +13,21 @@ public class WeatherAccess {
     String searchUrl;
     WeatherData weatherData;
     String language = null;
+    Credentials creds = Credentials.getInstance();
 
     public void WeatherData(String city, String lang) throws IOException {
         try {
             if (lang.equals( null )){
                 searchUrl = "http://api.openweathermap.org/data/2.5/find?q="
                         + city
-                        + "&units=metric&type=like&APPID=";
+                        + "&units=metric&type=like&APPID=" + creds.getAPPID();
             }
             else{
                 language = lang;
                 searchUrl = "http://api.openweathermap.org/data/2.5/find?q="
                         + city
                         + "&lang=" + language
-                        + "&units=metric&type=like&APPID=";
+                        + "&units=metric&type=like&APPID=" + creds.getAPPID();
             }
 
             url = new URL( searchUrl );

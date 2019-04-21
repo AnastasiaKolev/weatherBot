@@ -15,20 +15,21 @@ public class ForecastAccess {
     String searchForecastUrl;
     ForecastData forecastData;
     String language = null;
+    Credentials creds = Credentials.getInstance();
 
     public void ForecastData(String city, String lang) throws IOException {
         try {
             if (lang.equals( null )){
                 searchForecastUrl = "http://api.openweathermap.org/data/2.5/forecast?q="
                         + city
-                        + "&units=metric&type=like&APPID=";
+                        + "&units=metric&type=like&APPID=" + creds.getAPPID();
             }
             else{
                 language = lang;
                 searchForecastUrl = "http://api.openweathermap.org/data/2.5/forecast?q="
                         + city
                         + "&lang=" + language
-                        + "&units=metric&type=like&APPID=";
+                        + "&units=metric&type=like&APPID=" + creds.getAPPID();
             }
 
             urlForecast = new URL( searchForecastUrl );
