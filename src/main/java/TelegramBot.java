@@ -448,10 +448,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     public String getBotUsername() {
-        return "WeatherBotByStasey_bot";
+        return "";
     }
 
     public String getBotToken() {
-        return "703395182:AAEjyivyOziDjJRSfDecomJ7auhQYePjaz4";
+        return "";
     }
 }

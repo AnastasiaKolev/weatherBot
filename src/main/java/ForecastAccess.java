@@ -21,14 +21,14 @@ public class ForecastAccess {
             if (lang.equals( null )){
                 searchForecastUrl = "http://api.openweathermap.org/data/2.5/forecast?q="
                         + city
-                        + "&units=metric&type=like&APPID=d816117a8ef0e7f4f6249e508a2eadfd";
+                        + "&units=metric&type=like&APPID=";
             }
             else{
                 language = lang;
                 searchForecastUrl = "http://api.openweathermap.org/data/2.5/forecast?q="
                         + city
                         + "&lang=" + language
-                        + "&units=metric&type=like&APPID=d816117a8ef0e7f4f6249e508a2eadfd";
+                        + "&units=metric&type=like&APPID=";
             }
 
             urlForecast = new URL( searchForecastUrl );
