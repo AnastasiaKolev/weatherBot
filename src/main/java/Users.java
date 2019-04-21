@@ -1,9 +1,10 @@
-import java.io.*;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Класс пользователей со свойствами <b>firstName</b>, <b>userId</b>, <b>language</b> и <b>subscribe</b>.
+ *
  * @author anastasia.kolevatykh
  * @version 1.0
  */
@@ -12,17 +13,29 @@ public class Users {
      * Облявляем переменную со список пользователей
      */
     private List<User> usersList = new ArrayList<>();
+    private Connection connection = null;
 
     public Users() {
+        try {
+            // create a database connection
+            connection = DriverManager.getConnection( "jdbc:sqlite:db/db.db" );
+
+            // Statement - для запросов.
+            Statement statement = connection.createStatement();
+            statement.setQueryTimeout( 30 );  // set timeout to 30 sec.
+            String sql = "create table if not exists user (userId string, firstName string, language string, location string, subscribe boolean)";
+            statement.executeUpdate( sql );
+        } catch (SQLException e) {
+            // if the error message is "out of memory",
+            // it probably means no database file is found
+            System.err.println( e.getMessage() );
+        }
+
         this.getFromDB();
     }
 
-    public List<User> getUsers() {
-        return usersList;
-    }
-
     public User setUser(Integer id, String firstName, String language, String location, Boolean subscribe) {
-        User user = new User( id, firstName, language, location, subscribe);
+        User user = new User( id, firstName, language, location, subscribe );
         this.usersList.add( user );
         this.saveToDB();
         return user;
@@ -36,65 +49,63 @@ public class Users {
                 return usersList.get( i );
             }
         }
+
         return setUser( id, firstName, language, location, subscribe );
     }
 
-    public List<User> getUsersWithSubscription () {
+    public List<User> getUsersWithSubscription() {
         List<User> usersWithSubscription = new ArrayList<User>();
-        for (int i = 0; i < this.usersList.size(); i++){
+        for (int i = 0; i < this.usersList.size(); i++) {
             User tempUser = this.usersList.get( i );
-            if ( tempUser.getSubscription() ) {
+            if (tempUser.getSubscription()) {
                 usersWithSubscription.add( tempUser );
             }
         }
         return usersWithSubscription;
     }
 
-    public void saveToDB() {
+    public void saveToDB()  {
         try {
-            BufferedWriter br = new BufferedWriter( new FileWriter( "./db/db.txt" ) );
+
+            Statement statement = connection.createStatement();
+            statement.executeUpdate( "drop table if exists user" );
+            String sql = "create table if not exists user (userId string, firstName string, language string, location string, subscribe boolean)";
+            statement.executeUpdate( sql );
 
             for (int i = 0; i < this.usersList.size(); i++) {
                 User tempUser = this.usersList.get( i );
-                String[] strings = {tempUser.getUserId().toString()
-                        , tempUser.getFirstName()
-                        , tempUser.getLanguage()
-                        , tempUser.getLocation()
-                        , tempUser.getSubscription().toString()};
-
-                for (int j = 0; j < strings.length; j++) {
-                    br.write( strings[j] );
-                    if (j < strings.length - 1) {
-                        br.write( ";" );
-                    }
-                }
-
-                br.write( "\n" );
+                String rq = "insert into user values("
+                        + "'" + tempUser.getUserId().toString() + "',"
+                        + "'" + tempUser.getFirstName() + "',"
+                        + "'" + tempUser.getLanguage() + "',"
+                        + "'" + tempUser.getLocation() + "',"
+                        + "'" + tempUser.getSubscription() + "'"
+                        + ")";
+                statement.executeUpdate( rq );
             }
-
-            br.close();
-        } catch (IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     private void getFromDB() {
         try {
-            BufferedReader reader = new BufferedReader( new FileReader( "./db/db.txt" ) );
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] temp = line.split( ";" );
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery( "select * from user" );
 
-                User tempUser = new User( Integer.parseInt( temp[0] )
-                        , temp[1]
-                        , temp[2]
-                        , temp[3]
-                        , Boolean.parseBoolean( temp[4] ) );
+            User tempUser;
 
+            while (rs.next()) {
+                tempUser = new User(
+                        rs.getInt( "userId" ),
+                        rs.getString( "firstName" ),
+                        rs.getString( "language" ),
+                        rs.getString( "location" ),
+                        rs.getBoolean( "subscribe" )
+                );
                 usersList.add( tempUser );
             }
-            reader.close();
-        } catch (IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }

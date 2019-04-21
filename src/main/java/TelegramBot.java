@@ -20,17 +20,19 @@ import java.util.List;
 
 public class TelegramBot extends TelegramLongPollingBot {
     private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
-    private Users users = new Users();
+    private Users users;
     private EmojiService emoji = new EmojiService();
     private String token = null;
     private String username = null;
 
     // for forecast, Date to text formatter
-    private static final DateTimeFormatter dateFormatterFromDate = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter dateFormatterFromDate = DateTimeFormatter.ofPattern( "dd/MM/yyyy" );
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern( "HH:mm" );
 
     TelegramBot() {
         super();
+
+        users = new Users();
 
         Credentials creds = Credentials.getInstance();
         this.token = creds.getBotToken();
@@ -45,21 +47,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         String cityRequest = "What city are you interested in?\tFor instance, you can enter: \"London\" or \"London,GB\".\n"
                 + "Какой город вас интересует?\tНапример: \"Санкт-Петербург\" или \"Санкт-Петербург,RU\".";
 
-        User currentUser = users.getUser(message.getFrom().getId()
+        User currentUser = users.getUser( message.getFrom().getId()
                 , message.getFrom().getFirstName()
                 , message.getFrom().getLanguageCode()
                 , "null"
-                , false);
+                , false );
 
-        if ( message.hasText() && message.hasText() ) {
+        if (message.hasText() && message.hasText()) {
             System.out.println( message.getFrom().getFirstName() + "\t"
                     + currentUser.getUserId() + "\t"
                     + currentUser.getLanguage() + "\t"
                     + currentUser.getLocation() + "\t"
                     + currentUser.getSubscription() + "\t"
-                    + "Message: " + mesText);
+                    + "Message: " + mesText );
 
-            if ( mesText.equals( "/start" ) ) {
+            if (mesText.equals( "/start" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
                 SendMessage greetings = new SendMessage()
@@ -75,7 +77,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            if ( mesText.equals( "Language" ) ) {
+            if (mesText.equals( "Language" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_LANGUAGE;
 
                 SendMessage languageChoice = new SendMessage()
@@ -89,7 +91,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             //In case of input, not a keyboard option
-            if ( mesText.equals( "City" ) || mesText.equals( "city" ) ) {
+            if (mesText.equals( "City" ) || mesText.equals( "city" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
                 SendMessage cityInput = new SendMessage()
@@ -102,7 +104,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             //new forecast
-            if ( mesText.equals( "Forecast" ) ) {
+            if (mesText.equals( "Forecast" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_FORECAST;
 
                 SendMessage message1 = new SendMessage()
@@ -114,7 +116,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            if ( mesText.equals( "Back" ) ) {
+            if (mesText.equals( "Back" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
                 SendMessage message1 = new SendMessage()
@@ -126,7 +128,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            if ( mesText.equals( "Subscribe to daily Updates" ) ){
+            if (mesText.equals( "Subscribe to daily Updates" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_SUBSCRIBE;
 
                 SendMessage message1 = new SendMessage()
@@ -138,21 +140,22 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            if ( mesText.equals( "Unsubscribe" ) ){
+            if (mesText.equals( "Unsubscribe" )) {
                 currentUser.setSubscription( false );
 
                 SendMessage message1 = new SendMessage()
                         .setChatId( message.getChatId().toString() )
                         .setText( "Вы успешно отписались от ежедневных обновлений!\n"
-                                + "Проверяйте погоду в удобное для Вас время, используя опции бота.");
+                                + "Проверяйте погоду в удобное для Вас время, используя опции бота." );
 
                 keyboardSettings( message1 );
 
                 return;
             }
 
-            if ( mode.equals( AbilityMessageCodes.MODE_SELECT_LANGUAGE ) ) {
+            if (mode.equals( AbilityMessageCodes.MODE_SELECT_LANGUAGE )) {
                 currentUser.setLanguage( mesText );
+                users.saveToDB();
 
                 SendMessage message1 = new SendMessage()
                         .setChatId( message.getChatId().toString() )
@@ -185,15 +188,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            if (mode.equals( AbilityMessageCodes.MODE_SELECT_SUBSCRIBE )){
+            if (mode.equals( AbilityMessageCodes.MODE_SELECT_SUBSCRIBE )) {
                 try {
                     getWeather( message, mesText, currentUser.getLanguage() );
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
-                if ( !currentUser.getSubscription()
-                        && !currentUser.getLocation().equals( mesText ) ) {
+                if (!currentUser.getLocation().equals( mesText )) {
                     currentUser.setSubscription( true );
                     currentUser.setLocation( mesText );
                     users.saveToDB();
@@ -205,7 +207,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         .setChatId( message.getChatId().toString() )
                         .setText( currentUser.getFirstName()
                                 + " поздравляю, Вы подписались на ежедневные обновления погоды для города: "
-                                + mesText);
+                                + mesText );
 
                 keyboardSettings( message1 );
 
@@ -232,7 +234,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
 
-        if ( weatherAccess.weatherData.getList().size() == 0 ) {
+        if (weatherAccess.weatherData.getList().size() == 0) {
             return "";
         }
 
@@ -250,7 +252,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String description = curWeather.get( 0 ).getDescription();
 
         String iconId = curWeather.get( 0 ).getIcon();
-        String emojiWeather = emoji.getEmojiForWeather(iconId).getUnicode();
+        String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
 
         String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
 
@@ -261,7 +263,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 + "\nDescription: \t" + description + "\t" + (emoji == null ? "" : emojiWeather);
     }
 
-    private void getWeatherForecast(Message message, String mesText, String language) throws IOException{
+    private void getWeatherForecast(Message message, String mesText, String language) throws IOException {
         String result = getWeatherForecastString( mesText, language );
 
         if (result.equals( "" )) {
@@ -296,9 +298,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             ListForecast weatherForecast = forecastAccess.forecastData.getList().get( i );
 
             //getting date from json forecast list
-            LocalDate date = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault()).toLocalDate();
+            LocalDate date = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
             //getting 1st date on the list
-            LocalDate date1 = Instant.ofEpochSecond( forecastAccess.forecastData.getList().get( 0 ).getDt() ).atZone( ZoneId.systemDefault()).toLocalDate();
+            LocalDate date1 = Instant.ofEpochSecond( forecastAccess.forecastData.getList().get( 0 ).getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
 
             LocalDateTime dateTime = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDateTime();
 
@@ -312,41 +314,37 @@ public class TelegramBot extends TelegramLongPollingBot {
             String windSpeed = wind.getSpeed().toString();
 
             String iconId = curWeather.get( 0 ).getIcon();
-            String emojiWeather = emoji.getEmojiForWeather(iconId).getUnicode();
+            String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
 
             String emojiDate = emoji.getEmojiForWeather( "diamond" ).getUnicode();
-            if ( dateFormatterFromDate.format( date ).equals( dateFormatterFromDate.format( date1 ) ) ) {
-                if ( dateTimeFormatter.format( dateTime ).equals( "03:00") ) {
-                    weather.append( "\n" ).append( emojiDate)
+            if (dateFormatterFromDate.format( date ).equals( dateFormatterFromDate.format( date1 ) )) {
+                if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
+                    weather.append( "\n" ).append( emojiDate )
                             .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
                             .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
                             .append( "\t" ).append( description ).append( "\t" )
                             .append( emoji == null ? "" : emojiWeather );
                     countDay1++;
-                }
-                else if ( countDay1 == 1 && dateTimeFormatter.format( dateTime ).equals( "15:00" ) ) {
+                } else if (countDay1 == 1 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
                     weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
                             .append( "\t" ).append( description ).append( "\t" )
                             .append( emoji == null ? "" : emojiWeather )
                             .append( "\nWind speed: " ).append( windSpeed ).append( "\n" );
-                }
-                else if ( countDay1 == 0 && dateTimeFormatter.format( dateTime ).equals( "15:00" ) ){
-                    weather.append( "\n" ).append( emojiDate)
+                } else if (countDay1 == 0 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
+                    weather.append( "\n" ).append( emojiDate )
                             .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
                             .append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
                             .append( "\t" ).append( description ).append( "\t" )
                             .append( emoji == null ? "" : emojiWeather )
                             .append( "\nWind speed: " ).append( windSpeed ).append( "\n" );
                 }
-            }
-            else if ( dateTimeFormatter.format( dateTime ).equals( "03:00") ) {
-                weather.append( "\n" ).append( emojiDate)
+            } else if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
+                weather.append( "\n" ).append( emojiDate )
                         .append( "\t" ).append( dateFormatterFromDate.format( date ) )
                         .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
                         .append( "\t" ).append( description ).append( "\t" )
                         .append( emoji == null ? "" : emojiWeather );
-            }
-            else if ( dateTimeFormatter.format( dateTime ).equals( "15:00" ) ) {
+            } else if (dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
                 weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
                         .append( "\t" ).append( description ).append( "\t" )
                         .append( emoji == null ? "" : emojiWeather )
@@ -389,7 +387,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         KeyboardRow row1 = new KeyboardRow();
         row1.add( "en" );
         row1.add( "fr" );
-        row1.add( "ru");
+        row1.add( "ru" );
         keyboard1.add( row1 );
 
         row1 = new KeyboardRow();
@@ -423,12 +421,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void startAlertTimers() {
         TimerExecutor currentTimer = new TimerExecutor();
-        currentTimer.startExecutionEveryDayAt(new CustomTimerTask() {
+        currentTimer.startExecutionEveryDayAt( new CustomTimerTask() {
             @Override
             public void execute() {
                 sendAlerts();
             }
-        }, 0, 0, 1);
+        }, 0, 0, 1 );
     }
 
     private void sendAlerts() {
@@ -436,18 +434,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         for (User sub : allSubs) {
             synchronized (Thread.currentThread()) {
                 try {
-                    Thread.currentThread().wait(35);
+                    Thread.currentThread().wait( 35 );
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
 
             SendMessage sendMessage = new SendMessage();
-            sendMessage.enableMarkdown(true);
-            sendMessage.setChatId(String.valueOf(sub.getUserId()));
-            sendMessage.setText(getWeatherString( sub.getLocation(), sub.getLanguage() ));
+            sendMessage.enableMarkdown( true );
+            sendMessage.setChatId( String.valueOf( sub.getUserId() ) );
+            sendMessage.setText( getWeatherString( sub.getLocation(), sub.getLanguage() ) );
             try {
-                execute(sendMessage);
+                execute( sendMessage );
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }

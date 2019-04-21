@@ -7,10 +7,6 @@ import java.io.IOException;
 public class MainClass {
 
     public static void main(String[] args) throws IOException {
-//        System.getProperties().put( "proxySet", "true" );
-//        System.getProperties().put( "socksProxyHost", "127.0.0.1" );
-//        System.getProperties().put( "socksProxyPort", "9150" );
-
         Credentials creds = Credentials.getInstance();
         creds.read();
 
@@ -18,7 +14,7 @@ public class MainClass {
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
         try {
             TelegramBot bot = new TelegramBot();
-            telegramBotsApi.registerBot(bot);
+            telegramBotsApi.registerBot( bot );
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
