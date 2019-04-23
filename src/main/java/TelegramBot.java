@@ -8,12 +8,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +18,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
     private Users users;
     private EmojiService emoji = new EmojiService();
-    private String token = null;
-    private String username = null;
+    private String token;
+    private String username;
 
-    // for forecast, Date to text formatter
+    // for forecast data, Date to text formatter
     private static final DateTimeFormatter dateFormatterFromDate = DateTimeFormatter.ofPattern( "dd/MM/yyyy" );
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern( "HH:mm" );
 
@@ -69,8 +65,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                         .setText( "Howdy, " + message.getFrom().getFirstName()
                                 + "!\nI'm the weather Master, just kidding."
                                 + "\nI'll be glad to inform you about the weather in your city!"
-                                + "\nПриветствую, " + message.getFrom().getFirstName()
-                                + "!\nЯ - погодный бот. Буду рад рассказать о погоде в вашем городе!\n"
+                                + "\n\nПриветствую, " + message.getFrom().getFirstName()
+                                + "!\nЯ - погодный бот. Буду рад рассказать о погоде в вашем городе!\n\n"
                                 + cityRequest );
 
                 keyboardSettings( greetings );
@@ -133,7 +129,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 SendMessage message1 = new SendMessage()
                         .setChatId( message.getChatId().toString() )
-                        .setText( "Введите город, для которого будете получать обновления: " );
+                        .setText( "Enter the city for which you want to receive updates:\n" +
+                                "Введите город для которого хотите получать обновления:" );
 
                 keyboardSettings( message1 );
 
@@ -142,6 +139,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             if (mesText.equals( "Unsubscribe" )) {
                 currentUser.setSubscription( false );
+                users.saveToDB();
 
                 SendMessage message1 = new SendMessage()
                         .setChatId( message.getChatId().toString() )
@@ -218,142 +216,160 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void getWeather(Message message, String mesText, String language) throws IOException {
         String result = getWeatherString( mesText, language );
 
-        if (result.equals( "" )) {
-            sendMsg( message, "Sorry, couldn't find city.\nИзвините, я не нашел такого города." );
+        if (result.equals( "error" )) {
+            sendMsg( message, "Sorry, no city found.\nИзвините, я не нашел такого города." );
             System.out.println( "Нет такого города!" );
+        } else {
+            sendMsg( message, result );
         }
-
-        sendMsg( message, result );
     }
 
     private String getWeatherString(String mesText, String language) {
-        WeatherAccess weatherAccess = new WeatherAccess();
+        String cityFound;
         try {
+            WeatherAccess weatherAccess = new WeatherAccess();
             weatherAccess.WeatherData( mesText, language );
+
+            if ( weatherAccess.weatherData.getList().size() == 0 ) {
+                return "Sorry, city not found.";
+            }
+
+            if ( weatherAccess.weatherData.getCod().equals( "200" )
+                    && !( weatherAccess.weatherData.getList().size() == 0) ) {
+                //accessing weather data
+                ListWeather weather = weatherAccess.weatherData.getList().get( 0 );
+                Sys currentSys = weather.getSys();
+                Main currentMain = weather.getMain();
+                List<Weather> curWeather = weather.getWeather();
+                Wind wind = weather.getWind();
+
+                //getting weather data
+                String cityName = weather.getName();
+                String countryName = currentSys.getCountry();
+                int minTemp = currentMain.getTempMin().intValue();
+                int maxTemp = currentMain.getTempMax().intValue();
+                String windSpeed = wind.getSpeed().toString();
+                String description = curWeather.get( 0 ).getDescription();
+
+                //setting emoji
+                String iconId = curWeather.get( 0 ).getIcon();
+                String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
+                String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
+
+                cityFound = emojiCity + "\tCurrent weather for " + cityName + ", " + countryName
+                        + "\nMin: \t" + minTemp + " ºC"
+                        + "\nMax: \t" + maxTemp + " ºC"
+                        + "\nDescription: \t" + description + "\t" + (emoji == null ? "" : emojiWeather)
+                        + "\nWind speed: \t" + windSpeed + " m/s";
+                return cityFound;
+            }
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println( "Нет такого города!" );
+            return "No such city";
         }
-
-        if (weatherAccess.weatherData.getList().size() == 0) {
-            return "";
-        }
-
-        ListWeather weather = weatherAccess.weatherData.getList().get( 0 );
-        Sys currentSys = weather.getSys();
-        Main currentMain = weather.getMain();
-        List<Weather> curWeather = weather.getWeather();
-        Wind wind = weather.getWind();
-
-        String cityName = weather.getName();
-        String countryName = currentSys.getCountry();
-        int minTemp = currentMain.getTempMin().intValue();
-        int maxTemp = currentMain.getTempMax().intValue();
-        String windSpeed = wind.getSpeed().toString();
-        String description = curWeather.get( 0 ).getDescription();
-
-        String iconId = curWeather.get( 0 ).getIcon();
-        String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
-
-        String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
-
-        return emojiCity + "\tCurrent weather for " + cityName + ", " + countryName
-                + "\nMin: \t" + minTemp + " ºC"
-                + "\nMax: \t" + maxTemp + " ºC"
-                + "\nWind speed: \t" + windSpeed
-                + "\nDescription: \t" + description + "\t" + (emoji == null ? "" : emojiWeather);
+        return "error";
     }
 
     private void getWeatherForecast(Message message, String mesText, String language) throws IOException {
         String result = getWeatherForecastString( mesText, language );
 
-        if (result.equals( "" )) {
+        if (result.equals( "error" )) {
             sendMsg( message, "Sorry, couldn't find the city.\nИзвините, город не найден." );
             System.out.println( "Нет такого города!" );
+        } else {
+            sendMsg( message, result );
         }
-
-        sendMsg( message, result );
     }
 
-    private String getWeatherForecastString(String mesText, String language) throws FileNotFoundException {
-        ForecastAccess forecastAccess = new ForecastAccess();
+    private String getWeatherForecastString(String mesText, String language) {
+        String forecast;
         try {
+            ForecastAccess forecastAccess = new ForecastAccess();
             forecastAccess.ForecastData( mesText, language );
+
+            if ( forecastAccess.forecastData.getCod().equals( "404" ) ){
+                return "Sorry, city not found.";
+            }
+
+            if ( forecastAccess.forecastData.getCod().equals( "200" ) ) {
+                String cityName = forecastAccess.forecastData.getCity().getName();
+                String countryName = forecastAccess.forecastData.getCity().getCountry();
+
+                Emoji emojiCity = EmojiManager.getForAlias( "earth_africa" );
+
+                StringBuilder weather = new StringBuilder();
+                weather.append( emojiCity.getUnicode() ).append( "\tWeather forecast for " )
+                        .append( cityName ).append( ", " ).append( countryName ).append( "\n" );
+
+                int countDay1 = 0;
+                for (int i = 0; i < forecastAccess.forecastData.getList().size(); i++) {
+                    ListForecast weatherForecast = forecastAccess.forecastData.getList().get( i );
+
+                    //getting date from json list
+                    LocalDate date = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
+                    //getting 1st date on the list to search for 3:00 and 15:00 data
+                    LocalDate date1 = Instant.ofEpochSecond( forecastAccess.forecastData.getList().get( 0 ).getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
+                    //getting time to operate on hourly data - 3:00 and 15:00
+                    LocalDateTime dateTime = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDateTime();
+
+                    Main currentMain = weatherForecast.getMain();
+                    List<Weather> curWeather = weatherForecast.getWeather();
+                    Wind wind = weatherForecast.getWind();
+
+                    int minTemp = currentMain.getTempMin().intValue();
+                    int maxTemp = currentMain.getTempMax().intValue();
+                    String description = curWeather.get( 0 ).getDescription();
+                    String windSpeed = wind.getSpeed().toString();
+
+                    String iconId = curWeather.get( 0 ).getIcon();
+                    String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
+
+                    String emojiDate = emoji.getEmojiForWeather( "diamond" ).getUnicode();
+                    if (dateFormatterFromDate.format( date ).equals( dateFormatterFromDate.format( date1 ) )) {
+                        if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
+                            weather.append( "\n" ).append( emojiDate )
+                                    .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
+                                    .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
+                                    .append( "\t" ).append( description ).append( "\t" )
+                                    .append( emoji == null ? "" : emojiWeather );
+                            countDay1++;
+                        } else if (countDay1 == 1 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
+                            weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
+                                    .append( "\t" ).append( description ).append( "\t" )
+                                    .append( emoji == null ? "" : emojiWeather )
+                                    .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
+                        } else if (countDay1 == 0 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
+                            weather.append( "\n" ).append( emojiDate )
+                                    .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
+                                    .append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
+                                    .append( "\t" ).append( description ).append( "\t" )
+                                    .append( emoji == null ? "" : emojiWeather )
+                                    .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
+                        }
+                    } else if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
+                        weather.append( "\n" ).append( emojiDate )
+                                .append( "\t" ).append( dateFormatterFromDate.format( date ) )
+                                .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
+                                .append( "\t" ).append( description ).append( "\t" )
+                                .append( emoji == null ? "" : emojiWeather );
+                    } else if (dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
+                        weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
+                                .append( "\t" ).append( description ).append( "\t" )
+                                .append( emoji == null ? "" : emojiWeather )
+                                .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
+                    }
+                }
+                forecast = weather.toString();
+
+                return forecast;
+            }
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println( "Нет такого города!" );
-            return "Sorry, couldn't find the city.\nИзвините, город не найден.";
+            return "Sorry, no city found.\nИзвините, город не найден.";
         }
-
-        String cityName = forecastAccess.forecastData.getCity().getName(); //city
-        String countryName = forecastAccess.forecastData.getCity().getCountry(); //country
-
-        Emoji emojiCity = EmojiManager.getForAlias( "earth_africa" );
-        String forecast;
-        StringBuilder weather = new StringBuilder();
-        weather.append( emojiCity.getUnicode() ).append( "\tWeather forecast for " )
-                .append( cityName ).append( ", " ).append( countryName ).append( "\n" );
-
-        int countDay1 = 0;
-        for (int i = 0; i < forecastAccess.forecastData.getList().size(); i++) {
-            ListForecast weatherForecast = forecastAccess.forecastData.getList().get( i );
-
-            //getting date from json forecast list
-            LocalDate date = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
-            //getting 1st date on the list
-            LocalDate date1 = Instant.ofEpochSecond( forecastAccess.forecastData.getList().get( 0 ).getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
-
-            LocalDateTime dateTime = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDateTime();
-
-            Main currentMain = weatherForecast.getMain();
-            List<Weather> curWeather = weatherForecast.getWeather();
-            Wind wind = weatherForecast.getWind();
-
-            int minTemp = currentMain.getTempMin().intValue();
-            int maxTemp = currentMain.getTempMax().intValue();
-            String description = curWeather.get( 0 ).getDescription();
-            String windSpeed = wind.getSpeed().toString();
-
-            String iconId = curWeather.get( 0 ).getIcon();
-            String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
-
-            String emojiDate = emoji.getEmojiForWeather( "diamond" ).getUnicode();
-            if (dateFormatterFromDate.format( date ).equals( dateFormatterFromDate.format( date1 ) )) {
-                if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
-                    weather.append( "\n" ).append( emojiDate )
-                            .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
-                            .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
-                            .append( "\t" ).append( description ).append( "\t" )
-                            .append( emoji == null ? "" : emojiWeather );
-                    countDay1++;
-                } else if (countDay1 == 1 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
-                    weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
-                            .append( "\t" ).append( description ).append( "\t" )
-                            .append( emoji == null ? "" : emojiWeather )
-                            .append( "\nWind speed: " ).append( windSpeed ).append( "\n" );
-                } else if (countDay1 == 0 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
-                    weather.append( "\n" ).append( emojiDate )
-                            .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
-                            .append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
-                            .append( "\t" ).append( description ).append( "\t" )
-                            .append( emoji == null ? "" : emojiWeather )
-                            .append( "\nWind speed: " ).append( windSpeed ).append( "\n" );
-                }
-            } else if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
-                weather.append( "\n" ).append( emojiDate )
-                        .append( "\t" ).append( dateFormatterFromDate.format( date ) )
-                        .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
-                        .append( "\t" ).append( description ).append( "\t" )
-                        .append( emoji == null ? "" : emojiWeather );
-            } else if (dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
-                weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
-                        .append( "\t" ).append( description ).append( "\t" )
-                        .append( emoji == null ? "" : emojiWeather )
-                        .append( "\nWind speed: " ).append( windSpeed ).append( "\n" );
-            }
-        }
-
-        forecast = weather.toString();
-        return forecast;
+        return "error";
     }
 
     private void keyboardSettings(SendMessage message1) {
@@ -420,17 +436,20 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     private void startAlertTimers() {
+        final LocalDateTime localNow = LocalDateTime.now( Clock.systemUTC());
+
         TimerExecutor currentTimer = new TimerExecutor();
         currentTimer.startExecutionEveryDayAt( new CustomTimerTask() {
             @Override
             public void execute() {
                 sendAlerts();
             }
-        }, 0, 0, 1 );
+        }, localNow.getHour(), localNow.getMinute(), localNow.getSecond() );
     }
 
     private void sendAlerts() {
         List<User> allSubs = users.getUsersWithSubscription();
+
         for (User sub : allSubs) {
             synchronized (Thread.currentThread()) {
                 try {
@@ -440,10 +459,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             }
 
+            System.out.println( "Update for " + sub.getFirstName() + " location = " + sub.getLocation() + " lang = " + sub.getLanguage() );
+
             SendMessage sendMessage = new SendMessage();
             sendMessage.enableMarkdown( true );
             sendMessage.setChatId( String.valueOf( sub.getUserId() ) );
-            sendMessage.setText( getWeatherString( sub.getLocation(), sub.getLanguage() ) );
+            sendMessage.setText( "Update for your subscription:\n\n" + getWeatherForecastString( sub.getLocation(), sub.getLanguage() ));
             try {
                 execute( sendMessage );
             } catch (TelegramApiException e) {

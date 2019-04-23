@@ -4,7 +4,6 @@ import java.util.List;
 
 /**
  * Класс пользователей со свойствами <b>firstName</b>, <b>userId</b>, <b>language</b> и <b>subscribe</b>.
- *
  * @author anastasia.kolevatykh
  * @version 1.0
  */
@@ -55,12 +54,14 @@ public class Users {
 
     public List<User> getUsersWithSubscription() {
         List<User> usersWithSubscription = new ArrayList<User>();
+
         for (int i = 0; i < this.usersList.size(); i++) {
             User tempUser = this.usersList.get( i );
             if (tempUser.getSubscription()) {
                 usersWithSubscription.add( tempUser );
             }
         }
+
         return usersWithSubscription;
     }
 
@@ -101,7 +102,7 @@ public class Users {
                         rs.getString( "firstName" ),
                         rs.getString( "language" ),
                         rs.getString( "location" ),
-                        rs.getBoolean( "subscribe" )
+                        Boolean.parseBoolean(rs.getString( "subscribe" ))
                 );
                 usersList.add( tempUser );
             }

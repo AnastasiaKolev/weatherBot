@@ -31,6 +31,7 @@ public class TimerExecutor {
         };
 
         final long delay = computeNextDelay(targetHour, targetMin, targetSec);
+
         executorService.schedule(taskWrapper, delay, TimeUnit.SECONDS);
     }
 
@@ -45,10 +46,13 @@ public class TimerExecutor {
     private long computeNextDelay(int targetHour, int targetMin, int targetSec) {
         final LocalDateTime localNow = LocalDateTime.now(Clock.systemUTC());
 
-        LocalDateTime localNextTarget = localNow.withHour(targetHour).withMinute(targetMin).withSecond(targetSec);
+        LocalDateTime localNextTarget = localNow
+                .withHour(targetHour)
+                .withMinute(targetMin)
+                .withSecond(targetSec);
 
-        while (localNow.compareTo(localNextTarget) > 0) {
-            localNextTarget = localNextTarget.plusDays(1);
+        while (localNow.compareTo(localNextTarget) >= 0) {
+            localNextTarget = localNextTarget.plusMinutes( 2 );
         }
 
         final Duration duration = Duration.between(localNow, localNextTarget);

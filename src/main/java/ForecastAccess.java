@@ -7,19 +7,20 @@ import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 
 public class ForecastAccess {
     URL urlForecast;
     InputStream inputForecastStream = null;
-    URLConnection forecastStream;
+    URLConnection forecastConnection;
     String searchForecastUrl;
     ForecastData forecastData;
-    String language = null;
+    String language = "en";
     Credentials creds = Credentials.getInstance();
 
     public void ForecastData(String city, String lang) throws IOException {
         try {
-            if (lang.equals( null )){
+            if (lang.equals( "en" )){
                 searchForecastUrl = "http://api.openweathermap.org/data/2.5/forecast?q="
                         + city
                         + "&units=metric&type=like&APPID=" + creds.getAPPID();
@@ -33,14 +34,15 @@ public class ForecastAccess {
             }
 
             urlForecast = new URL( searchForecastUrl );
+            forecastConnection = urlForecast.openConnection();
+
             System.out.println( searchForecastUrl );
-            forecastStream = urlForecast.openConnection();
 
-            inputForecastStream = forecastStream.getInputStream();
-            Reader reader = new InputStreamReader( inputForecastStream, "UTF-8" );
+            inputForecastStream = forecastConnection.getInputStream();
+            Reader reader = new InputStreamReader( inputForecastStream, StandardCharsets.UTF_8 );
 
-            Gson jsonForecast = new Gson();
-            this.forecastData = jsonForecast.fromJson( reader, ForecastData.class );
+            Gson gsonForecast = new Gson();
+            this.forecastData = gsonForecast.fromJson( reader, ForecastData.class );
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

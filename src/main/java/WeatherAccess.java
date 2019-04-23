@@ -6,45 +6,45 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 
 public class WeatherAccess {
-    URL url;
+    URL urlWeather;
     InputStream inputStream = null;
-    String searchUrl;
+    URLConnection weatherConnection;
+    String searchWeatherUrl;
     WeatherData weatherData;
-    String language = null;
+    String language = "en";
     Credentials creds = Credentials.getInstance();
 
     public void WeatherData(String city, String lang) throws IOException {
         try {
-            if (lang.equals( null )){
-                searchUrl = "http://api.openweathermap.org/data/2.5/find?q="
+            if (lang.equals( "en" )){
+                searchWeatherUrl = "http://api.openweathermap.org/data/2.5/find?q="
                         + city
                         + "&units=metric&type=like&APPID=" + creds.getAPPID();
             }
             else{
                 language = lang;
-                searchUrl = "http://api.openweathermap.org/data/2.5/find?q="
+                searchWeatherUrl = "http://api.openweathermap.org/data/2.5/find?q="
                         + city
                         + "&lang=" + language
                         + "&units=metric&type=like&APPID=" + creds.getAPPID();
             }
 
-            url = new URL( searchUrl );
-            System.out.println( searchUrl );
-            inputStream = url.openStream();
-            Reader reader = new InputStreamReader( inputStream, "UTF-8" );
+            urlWeather = new URL( searchWeatherUrl );
+            weatherConnection = urlWeather.openConnection();
 
-            Gson gson = new Gson();
-            this.weatherData = gson.fromJson( reader, WeatherData.class );
+            System.out.println( searchWeatherUrl );
+
+            inputStream = weatherConnection.getInputStream();
+            Reader reader = new InputStreamReader( inputStream, StandardCharsets.UTF_8 );
+
+            Gson gsonWeather = new Gson();
+            this.weatherData = gsonWeather.fromJson( reader, WeatherData.class );
         } catch (MalformedURLException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                e.getStackTrace();
-            }
         }
     }
 }

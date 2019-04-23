@@ -12,22 +12,13 @@ public class User {
     private String firstName;
 
     /** Поле языка */
-    private String language = "en";
+    private String language;
 
     /** Поле локации */
     private String location = "";
 
     /** Поле оформления подписки */
-    private Boolean subscribe = false;
-
-    /**
-     * Конструктор - создание нового пользователя с id
-     * @param userId - id пользователя
-     * @see User#User(Integer)
-     */
-    public User(Integer userId) {
-        this.userId = userId;
-    }
+    private Boolean subscribe;
 
     /**
      * Конструктор - создание нового пользователя со значениями
