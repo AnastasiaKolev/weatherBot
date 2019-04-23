@@ -40,8 +40,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
         String mesText = message.getText();
-        String cityRequest = "What city are you interested in?\tFor instance, you can enter: \"London\" or \"London,GB\".\n"
-                + "Какой город вас интересует?\tНапример: \"Санкт-Петербург\" или \"Санкт-Петербург,RU\".";
+        String cityRequest = "What city are you interested in?\tFor instance, you can enter: \"London\" or \"London,GB\"."
+                + "\n\nКакой город вас интересует?\tНапример: \"Санкт-Петербург\".";
 
         User currentUser = users.getUser( message.getFrom().getId()
                 , message.getFrom().getFirstName()
@@ -78,8 +78,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 SendMessage languageChoice = new SendMessage()
                         .setChatId( message.getChatId().toString() )
-                        .setText( "Choose language. NOTE: This option is applicable only to the weather description." +
-                                "\nВыберите язык. ПРИМЕЧАНИЕ: Этот параметр применяется только к описанию погоды. " );
+                        .setText( "Choose language. NOTE: This option is applicable only to the weather description."
+                                + "\n\nВыберите язык. ПРИМЕЧАНИЕ: Этот параметр применяется только к описанию погоды. " );
 
                 languageSettings( languageChoice );
 
@@ -103,11 +103,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (mesText.equals( "Forecast" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_FORECAST;
 
-                SendMessage message1 = new SendMessage()
+                SendMessage forecast = new SendMessage()
                         .setChatId( message.getChatId().toString() )
                         .setText( cityRequest );
 
-                keyboardSettings( message1 );
+                keyboardSettings( forecast );
 
                 return;
             }
@@ -115,11 +115,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (mesText.equals( "Back" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
-                SendMessage message1 = new SendMessage()
+                SendMessage back = new SendMessage()
                         .setChatId( message.getChatId().toString() )
                         .setText( cityRequest );
 
-                keyboardSettings( message1 );
+                keyboardSettings( back );
 
                 return;
             }
@@ -127,12 +127,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (mesText.equals( "Subscribe to daily Updates" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_SUBSCRIBE;
 
-                SendMessage message1 = new SendMessage()
+                SendMessage subscribe = new SendMessage()
                         .setChatId( message.getChatId().toString() )
-                        .setText( "Enter the city for which you want to receive updates:\n" +
-                                "Введите город для которого хотите получать обновления:" );
+                        .setText( "Enter the city for which you want to receive updates:"
+                                + "\n\nВведите город для которого хотите получать обновления:" );
 
-                keyboardSettings( message1 );
+                keyboardSettings( subscribe );
 
                 return;
             }
@@ -141,12 +141,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 currentUser.setSubscription( false );
                 users.saveToDB();
 
-                SendMessage message1 = new SendMessage()
+                SendMessage unsubscribe = new SendMessage()
                         .setChatId( message.getChatId().toString() )
-                        .setText( "Вы успешно отписались от ежедневных обновлений!\n"
-                                + "Проверяйте погоду в удобное для Вас время, используя опции бота." );
+                        .setText( "You have successfully unsubscribed."
+                                + "\n\nВы успешно отписались.\n" );
 
-                keyboardSettings( message1 );
+                keyboardSettings( unsubscribe );
 
                 return;
             }
@@ -155,11 +155,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 currentUser.setLanguage( mesText );
                 users.saveToDB();
 
-                SendMessage message1 = new SendMessage()
+                SendMessage modeLang = new SendMessage()
                         .setChatId( message.getChatId().toString() )
                         .setText( cityRequest );
 
-                keyboardSettings( message1 );
+                keyboardSettings( modeLang );
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
                 return;
@@ -193,22 +193,31 @@ public class TelegramBot extends TelegramLongPollingBot {
                     e.printStackTrace();
                 }
 
-                if (!currentUser.getLocation().equals( mesText )) {
-                    currentUser.setSubscription( true );
-                    currentUser.setLocation( mesText );
-                    users.saveToDB();
+                if ( getWeatherString( mesText, currentUser.getLanguage())
+                        .equals( "Sorry, city not found." ) ) {
+                    sendMsg( message, "Enter correct city, please." );
+
+                    mode = AbilityMessageCodes.MODE_SELECT_SUBSCRIBE;
+                } else {
+                    if (!currentUser.getLocation().equals( mesText )) {
+                        currentUser.setSubscription( true );
+                        currentUser.setLocation( mesText );
+                        users.saveToDB();
+                    }
+
+                    mode = AbilityMessageCodes.MODE_SELECT_CITY;
+
+                    SendMessage subscription = new SendMessage()
+                            .setChatId( message.getChatId().toString() )
+                            .setText( currentUser.getFirstName()
+                                    + " congrats, you have subscribed to daily updates for the city: "
+                                    + mesText
+                                    + "\n\n" + currentUser.getFirstName()
+                                    + " поздравляю, Вы подписались на ежедневные обновления для города: "
+                                    + mesText );
+
+                    keyboardSettings( subscription );
                 }
-
-                mode = AbilityMessageCodes.MODE_SELECT_CITY;
-
-                SendMessage message1 = new SendMessage()
-                        .setChatId( message.getChatId().toString() )
-                        .setText( currentUser.getFirstName()
-                                + " поздравляю, Вы подписались на ежедневные обновления погоды для города: "
-                                + mesText );
-
-                keyboardSettings( message1 );
-
             }
         }
     }
@@ -217,7 +226,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String result = getWeatherString( mesText, language );
 
         if (result.equals( "error" )) {
-            sendMsg( message, "Sorry, no city found.\nИзвините, я не нашел такого города." );
+            sendMsg( message, "Sorry, city not found." );
             System.out.println( "Нет такого города!" );
         } else {
             sendMsg( message, result );
@@ -266,7 +275,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println( "Нет такого города!" );
-            return "No such city";
+            return "Sorry, city not found.";
         }
         return "error";
     }
@@ -275,7 +284,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String result = getWeatherForecastString( mesText, language );
 
         if (result.equals( "error" )) {
-            sendMsg( message, "Sorry, couldn't find the city.\nИзвините, город не найден." );
+            sendMsg( message, "Sorry, city not found." );
             System.out.println( "Нет такого города!" );
         } else {
             sendMsg( message, result );
@@ -367,7 +376,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println( "Нет такого города!" );
-            return "Sorry, no city found.\nИзвините, город не найден.";
+            return "Sorry, city not found.";
         }
         return "error";
     }
