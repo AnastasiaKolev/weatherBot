@@ -1,2 +1,2 @@
 # weatherBot
-Weather bot by Stacy
+weather.Weather bot by Stacy

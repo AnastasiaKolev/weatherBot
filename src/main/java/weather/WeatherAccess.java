@@ -1,4 +1,7 @@
+package weather;
+
 import com.google.gson.Gson;
+import credentials.Credentials;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,11 +17,11 @@ public class WeatherAccess {
     InputStream inputStream = null;
     URLConnection weatherConnection;
     String searchWeatherUrl;
-    WeatherData weatherData;
+    public WeatherData weatherData;
     String language = "en";
     Credentials creds = Credentials.getInstance();
 
-    public void WeatherData(String city, String lang) throws IOException {
+    public void WeatherSearch(String city, String lang) throws IOException {
         try {
             if (lang.equals( "en" )){
                 searchWeatherUrl = "http://api.openweathermap.org/data/2.5/find?q="

@@ -1,3 +1,5 @@
+package alerts;
+
 /**
  * @author anastasia.kolevatykh
  * @version 1.0

@@ -3,5 +3,4 @@ public final class AbilityMessageCodes {
     public static String MODE_SELECT_CITY = "MODE_SELECT_CITY";
     public static String MODE_SELECT_SUBSCRIBE = "MODE_SELECT_SUBSCRIBE";
     public static String MODE_SELECT_FORECAST = "MODE_SELECT_FORECAST";
-
 }

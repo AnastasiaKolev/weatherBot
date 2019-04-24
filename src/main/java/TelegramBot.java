@@ -1,5 +1,8 @@
-import com.vdurmont.emoji.Emoji;
-import com.vdurmont.emoji.EmojiManager;
+import alerts.CustomTimerTask;
+import alerts.TimerExecutor;
+import credentials.Credentials;
+import database.User;
+import database.Users;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -7,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import weather.*;
 
 import java.io.IOException;
 import java.time.*;
@@ -15,15 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TelegramBot extends TelegramLongPollingBot {
-    private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
     private Users users;
-    private EmojiService emoji = new EmojiService();
     private String token;
     private String username;
+
+    private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
     // for forecast data, Date to text formatter
     private static final DateTimeFormatter dateFormatterFromDate = DateTimeFormatter.ofPattern( "dd/MM/yyyy" );
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern( "HH:mm" );
+
+    private EmojiService emoji = new EmojiService();
 
     TelegramBot() {
         super();
@@ -63,10 +69,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 SendMessage greetings = new SendMessage()
                         .setChatId( message.getChatId().toString() )
                         .setText( "Howdy, " + message.getFrom().getFirstName()
-                                + "!\nI'm the weather Master, just kidding."
                                 + "\nI'll be glad to inform you about the weather in your city!"
                                 + "\n\nПриветствую, " + message.getFrom().getFirstName()
-                                + "!\nЯ - погодный бот. Буду рад рассказать о погоде в вашем городе!\n\n"
+                                + "!\nБуду рад рассказать о погоде в вашем городе!\n\n"
                                 + cityRequest );
 
                 keyboardSettings( greetings );
@@ -87,7 +92,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             //In case of input, not a keyboard option
-            if (mesText.equals( "City" ) || mesText.equals( "city" )) {
+            if (mesText.equals( "weather.City" ) || mesText.equals( "city" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
                 SendMessage cityInput = new SendMessage()
@@ -237,7 +242,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String cityFound;
         try {
             WeatherAccess weatherAccess = new WeatherAccess();
-            weatherAccess.WeatherData( mesText, language );
+            weatherAccess.WeatherSearch( mesText, language );
 
             if ( weatherAccess.weatherData.getList().size() == 0 ) {
                 return "Sorry, city not found.";
@@ -257,7 +262,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String countryName = currentSys.getCountry();
                 int minTemp = currentMain.getTempMin().intValue();
                 int maxTemp = currentMain.getTempMax().intValue();
-                String windSpeed = wind.getSpeed().toString();
+                int windSpeed = wind.getSpeed().intValue();
                 String description = curWeather.get( 0 ).getDescription();
 
                 //setting emoji
@@ -292,10 +297,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private String getWeatherForecastString(String mesText, String language) {
-        String forecast;
+        String forecastFound;
         try {
             ForecastAccess forecastAccess = new ForecastAccess();
-            forecastAccess.ForecastData( mesText, language );
+            forecastAccess.ForecastSearch( mesText, language );
 
             if ( forecastAccess.forecastData.getCod().equals( "404" ) ){
                 return "Sorry, city not found.";
@@ -305,10 +310,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String cityName = forecastAccess.forecastData.getCity().getName();
                 String countryName = forecastAccess.forecastData.getCity().getCountry();
 
-                Emoji emojiCity = EmojiManager.getForAlias( "earth_africa" );
+                String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
 
                 StringBuilder weather = new StringBuilder();
-                weather.append( emojiCity.getUnicode() ).append( "\tWeather forecast for " )
+                weather.append( emojiCity ).append( "\tWeather forecast for " )
                         .append( cityName ).append( ", " ).append( countryName ).append( "\n" );
 
                 int countDay1 = 0;
@@ -316,29 +321,29 @@ public class TelegramBot extends TelegramLongPollingBot {
                     ListForecast weatherForecast = forecastAccess.forecastData.getList().get( i );
 
                     //getting date from json list
-                    LocalDate date = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
-                    //getting 1st date on the list to search for 3:00 and 15:00 data
-                    LocalDate date1 = Instant.ofEpochSecond( forecastAccess.forecastData.getList().get( 0 ).getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
-                    //getting time to operate on hourly data - 3:00 and 15:00
+                    LocalDate day = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
+                    //getting 1st date to search for both: 3:00 and 15:00 data
+                    LocalDate day1st = Instant.ofEpochSecond( forecastAccess.forecastData.getList().get( 0 ).getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
+                    //getting time to operate on hourly data - 3:00 and 15:00 UTC
                     LocalDateTime dateTime = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDateTime();
 
-                    Main currentMain = weatherForecast.getMain();
+                    Main curMain = weatherForecast.getMain();
                     List<Weather> curWeather = weatherForecast.getWeather();
                     Wind wind = weatherForecast.getWind();
 
-                    int minTemp = currentMain.getTempMin().intValue();
-                    int maxTemp = currentMain.getTempMax().intValue();
+                    int minTemp = curMain.getTempMin().intValue();
+                    int maxTemp = curMain.getTempMax().intValue();
                     String description = curWeather.get( 0 ).getDescription();
-                    String windSpeed = wind.getSpeed().toString();
+                    int windSpeed = wind.getSpeed().intValue();
 
                     String iconId = curWeather.get( 0 ).getIcon();
                     String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
-
                     String emojiDate = emoji.getEmojiForWeather( "diamond" ).getUnicode();
-                    if (dateFormatterFromDate.format( date ).equals( dateFormatterFromDate.format( date1 ) )) {
+
+                    if (dateFormatterFromDate.format( day ).equals( dateFormatterFromDate.format( day1st ) )) {
                         if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
                             weather.append( "\n" ).append( emojiDate )
-                                    .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
+                                    .append( "\t" ).append( dateFormatterFromDate.format( day1st ) )
                                     .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
                                     .append( "\t" ).append( description ).append( "\t" )
                                     .append( emoji == null ? "" : emojiWeather );
@@ -350,7 +355,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                                     .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
                         } else if (countDay1 == 0 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
                             weather.append( "\n" ).append( emojiDate )
-                                    .append( "\t" ).append( dateFormatterFromDate.format( date1 ) )
+                                    .append( "\t" ).append( dateFormatterFromDate.format( day1st ) )
                                     .append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
                                     .append( "\t" ).append( description ).append( "\t" )
                                     .append( emoji == null ? "" : emojiWeather )
@@ -358,7 +363,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         }
                     } else if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
                         weather.append( "\n" ).append( emojiDate )
-                                .append( "\t" ).append( dateFormatterFromDate.format( date ) )
+                                .append( "\t" ).append( dateFormatterFromDate.format( day ) )
                                 .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
                                 .append( "\t" ).append( description ).append( "\t" )
                                 .append( emoji == null ? "" : emojiWeather );
@@ -369,9 +374,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                                 .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
                     }
                 }
-                forecast = weather.toString();
+                forecastFound = weather.toString();
 
-                return forecast;
+                return forecastFound;
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -381,50 +386,54 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "error";
     }
 
-    private void keyboardSettings(SendMessage message1) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard = new ArrayList<>();
+    private void keyboardSettings(SendMessage message) {
+        ReplyKeyboardMarkup mainReplyKeyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> mainKeyboard = new ArrayList<>();
 
-        KeyboardRow row = new KeyboardRow();
-        row.add( "Language" );
-        row.add( "Forecast" );
-        keyboard.add( row );
+        KeyboardRow mainRow1 = new KeyboardRow();
+        mainRow1.add( "Language" );
+        mainRow1.add( "Forecast" );
+        mainKeyboard.add( mainRow1 );
 
-        row = new KeyboardRow();
-        row.add( "Subscribe to daily Updates" );
-        row.add( "Unsubscribe" );
-        keyboard.add( row );
+        KeyboardRow mainRow2 = new KeyboardRow();
+        mainRow2.add( "Subscribe to daily Updates" );
+        mainRow2.add( "Unsubscribe" );
+        mainKeyboard.add( mainRow2 );
 
-        replyKeyboardMarkup.setKeyboard( keyboard )
+        mainReplyKeyboardMarkup.setKeyboard( mainKeyboard )
+                .setResizeKeyboard( true )
                 .setOneTimeKeyboard( true );
-        message1.setReplyMarkup( replyKeyboardMarkup );
+
+        message.setReplyMarkup( mainReplyKeyboardMarkup );
         try {
-            execute( message1 );
+            execute( message );
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
-    private void languageSettings(SendMessage message2) {
-        ReplyKeyboardMarkup replyKeyboardMarkup1 = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard1 = new ArrayList<>();
+    private void languageSettings(SendMessage message) {
+        ReplyKeyboardMarkup langReplyKeyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> langKeyboard = new ArrayList<>();
 
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add( "en" );
-        row1.add( "fr" );
-        row1.add( "ru" );
-        keyboard1.add( row1 );
+        KeyboardRow langRow1 = new KeyboardRow();
+        langRow1.add( "en" );
+        langRow1.add( "fr" );
+        langRow1.add( "ru" );
+        langKeyboard.add( langRow1 );
 
-        row1 = new KeyboardRow();
-        row1.add( "de" );
-        row1.add( "es" );
-        row1.add( "Back" );
-        keyboard1.add( row1 );
+        KeyboardRow langRow2 = new KeyboardRow();
+        langRow2.add( "de" );
+        langRow2.add( "es" );
+        langRow2.add( "Back" );
+        langKeyboard.add( langRow2 );
 
-        replyKeyboardMarkup1.setKeyboard( keyboard1 );
-        message2.setReplyMarkup( replyKeyboardMarkup1 );
+        langReplyKeyboardMarkup.setKeyboard( langKeyboard )
+                .setResizeKeyboard( true );
+
+        message.setReplyMarkup( langReplyKeyboardMarkup );
         try {
-            execute( message2 );
+            execute( message );
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

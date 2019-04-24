@@ -1,3 +1,5 @@
+package database;
+
 /**
  * Класс пользователя с полями <b>userId</b>, <b>firstName</b>, <b>language</b>, <b>location</b> и <b>subscribe</b>.
  * @author anastasia.kolevatykh

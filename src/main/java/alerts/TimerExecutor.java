@@ -1,3 +1,5 @@
+package alerts;
+
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -14,12 +16,12 @@ public class TimerExecutor {
     private static final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1); ///< Thread to execute operations
 
     /**
-     * Add a new CustomTimerTask to be executed
+     * Add a new alerts.CustomTimerTask to be executed
      *
      * @param task       Task to execute
      * @param targetHour Hour to execute it
-     * @param targetMin  Minute to execute it
-     * @param targetSec  Second to execute it
+     * @param targetMin  Minute
+     * @param targetSec  Second
      */
     public void startExecutionEveryDayAt(CustomTimerTask task, int targetHour, int targetMin, int targetSec) {
         final Runnable taskWrapper = () -> {
@@ -51,7 +53,7 @@ public class TimerExecutor {
                 .withMinute(targetMin)
                 .withSecond(targetSec);
 
-        while (localNow.compareTo(localNextTarget) >= 0) {
+        while (localNow.compareTo(localNextTarget.minusSeconds(1)) > 0) {
             localNextTarget = localNextTarget.plusMinutes( 2 );
         }
 
