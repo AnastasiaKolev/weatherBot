@@ -1,3 +1,5 @@
+package weather;
+
 import com.vdurmont.emoji.Emoji;
 import com.vdurmont.emoji.EmojiManager;
 

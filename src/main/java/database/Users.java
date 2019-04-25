@@ -6,17 +6,30 @@ import java.util.List;
 
 /**
  * Класс пользователей со свойствами <b>firstName</b>, <b>userId</b>, <b>language</b> и <b>subscribe</b>.
+ *
  * @author anastasia.kolevatykh
  * @version 1.0
  */
 public class Users {
-    /**
-     * Облявляем переменную со список пользователей
-     */
+    private static volatile Users instance;
+
     private List<User> usersList = new ArrayList<>();
     private Connection connection = null;
 
-    public Users() {
+    public static Users getInstance() {
+        Users localInstance = instance;
+        if (localInstance == null) {
+            synchronized (Users.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new Users();
+                }
+            }
+        }
+        return localInstance;
+    }
+
+    public void init() {
         try {
             // create a database connection
             connection = DriverManager.getConnection( "jdbc:sqlite:db/db.db" );
@@ -67,7 +80,7 @@ public class Users {
         return usersWithSubscription;
     }
 
-    public void saveToDB()  {
+    public void saveToDB() {
         try {
 
             Statement statement = connection.createStatement();
@@ -104,7 +117,7 @@ public class Users {
                         rs.getString( "firstName" ),
                         rs.getString( "language" ),
                         rs.getString( "location" ),
-                        Boolean.parseBoolean(rs.getString( "subscribe" ))
+                        Boolean.parseBoolean( rs.getString( "subscribe" ) )
                 );
                 usersList.add( tempUser );
             }

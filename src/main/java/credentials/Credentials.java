@@ -7,14 +7,13 @@ import java.io.File;
 import java.io.IOException;
 
 public class Credentials {
-    CredentialsData credentialsData;
-
+    private CredentialsData credentialsData;
     private static volatile Credentials instance;
 
     /**
      * Constructor (private due to singleton pattern)
      */
-    private Credentials () {
+    private Credentials() {
 
     }
 
@@ -36,12 +35,12 @@ public class Credentials {
         return localInstance;
     }
 
-    public void read() throws IOException {
+    public void read() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure( JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+        mapper.configure( JsonParser.Feature.AUTO_CLOSE_SOURCE, true );
 
         try {
-            this.credentialsData = mapper.readValue(new File("./config/credentials.json"), CredentialsData.class);
+            this.credentialsData = mapper.readValue( new File( "./config/credentials.json" ), CredentialsData.class );
         } catch (IOException e) {
             e.printStackTrace();
         }

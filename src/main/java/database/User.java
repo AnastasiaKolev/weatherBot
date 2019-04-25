@@ -2,35 +2,17 @@ package database;
 
 /**
  * Класс пользователя с полями <b>userId</b>, <b>firstName</b>, <b>language</b>, <b>location</b> и <b>subscribe</b>.
+ *
  * @author anastasia.kolevatykh
  * @version 1.0
  */
 public class User {
-
-    /** Поле id пользователя */
     private Integer userId;
-
-    /** Поле Имя пользователя */
     private String firstName;
-
-    /** Поле языка */
     private String language;
-
-    /** Поле локации */
-    private String location = "";
-
-    /** Поле оформления подписки */
+    private String location;
     private Boolean subscribe;
 
-    /**
-     * Конструктор - создание нового пользователя со значениями
-     * @param userId - id пользователя
-     * @param firstName - Имя пользователя
-     * @param language - язык
-     * @param location - локация
-     * @param subscribe - оформление подписки
-     * @see User#User(Integer,String,String,String,Boolean)
-     */
     public User(Integer userId, String firstName, String language, String location, Boolean subscribe) {
         this.userId = userId;
         this.firstName = firstName;

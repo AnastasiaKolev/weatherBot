@@ -1,15 +1,16 @@
 import credentials.Credentials;
+import database.Users;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.IOException;
-
 public class MainClass {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Credentials creds = Credentials.getInstance();
         creds.read();
+        Users users = Users.getInstance();
+        users.init();
 
         ApiContextInitializer.init();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();

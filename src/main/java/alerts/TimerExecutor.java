@@ -16,7 +16,7 @@ public class TimerExecutor {
     private static final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1); ///< Thread to execute operations
 
     /**
-     * Add a new alerts.CustomTimerTask to be executed
+     * Add a new CustomTimerTask to be executed
      *
      * @param task       Task to execute
      * @param targetHour Hour to execute it
@@ -54,7 +54,7 @@ public class TimerExecutor {
                 .withSecond(targetSec);
 
         while (localNow.compareTo(localNextTarget.minusSeconds(1)) > 0) {
-            localNextTarget = localNextTarget.plusMinutes( 2 );
+            localNextTarget = localNextTarget.plusDays( 1 );
         }
 
         final Duration duration = Duration.between(localNow, localNextTarget);
