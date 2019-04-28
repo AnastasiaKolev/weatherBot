@@ -34,7 +34,7 @@ public class Users {
             // create a database connection
             connection = DriverManager.getConnection( "jdbc:sqlite:db/db.db" );
 
-            // Statement - для запросов.
+            // Statement - for queries
             Statement statement = connection.createStatement();
             statement.setQueryTimeout( 30 );  // set timeout to 30 sec.
             String sql = "create table if not exists user (userId string, firstName string, language string, location string, subscribe boolean)";
@@ -48,7 +48,7 @@ public class Users {
         this.getFromDB();
     }
 
-    public User setUser(Integer id, String firstName, String language, String location, Boolean subscribe) {
+    private User setUser(Integer id, String firstName, String language, String location, Boolean subscribe) {
         User user = new User( id, firstName, language, location, subscribe );
         this.usersList.add( user );
         this.saveToDB();
@@ -56,11 +56,11 @@ public class Users {
     }
 
     public User getUser(Integer id, String firstName, String language, String location, Boolean subscribe) {
-        for (Integer i = 0; i < usersList.size(); i++) {
-            Integer _id = usersList.get( i ).getUserId();
+        for (User user : usersList) {
+            Integer _id = user.getUserId();
 
             if (_id.equals( id )) {
-                return usersList.get( i );
+                return user;
             }
         }
 
@@ -68,10 +68,9 @@ public class Users {
     }
 
     public List<User> getUsersWithSubscription() {
-        List<User> usersWithSubscription = new ArrayList<User>();
+        List<User> usersWithSubscription = new ArrayList<>();
 
-        for (int i = 0; i < this.usersList.size(); i++) {
-            User tempUser = this.usersList.get( i );
+        for (User tempUser : this.usersList) {
             if (tempUser.getSubscription()) {
                 usersWithSubscription.add( tempUser );
             }
@@ -82,14 +81,12 @@ public class Users {
 
     public void saveToDB() {
         try {
-
             Statement statement = connection.createStatement();
             statement.executeUpdate( "drop table if exists user" );
             String sql = "create table if not exists user (userId string, firstName string, language string, location string, subscribe boolean)";
             statement.executeUpdate( sql );
 
-            for (int i = 0; i < this.usersList.size(); i++) {
-                User tempUser = this.usersList.get( i );
+            for (User tempUser : this.usersList) {
                 String rq = "insert into user values("
                         + "'" + tempUser.getUserId().toString() + "',"
                         + "'" + tempUser.getFirstName() + "',"

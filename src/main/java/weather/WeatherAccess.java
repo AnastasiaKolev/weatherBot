@@ -73,11 +73,11 @@ public class WeatherAccess extends WeatherAbstract {
                 String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
                 String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
 
-                cityFound = emojiCity + "\tCurrent weather for " + cityName + ", " + countryName
-                        + "\nMin: \t" + minTemp + " ºC"
-                        + "\nMax: \t" + maxTemp + " ºC"
-                        + "\nDescription: \t" + description + "\t" + (emoji == null ? "" : emojiWeather)
-                        + "\nWind speed: \t" + windSpeed + " m/s";
+                cityFound = emojiCity + "\tCurrent weather for *" + cityName + ", " + countryName
+                        + "*\n_Min_: \t" + minTemp + " ºC"
+                        + "\n_Max_: \t" + maxTemp + " ºC"
+                        + "\n_Description_: \t" + description + "\t" + (emoji == null ? "" : emojiWeather)
+                        + "\n_Wind speed_: \t" + windSpeed + " m/s";
                 return cityFound;
             }
         } catch (IOException e) {

@@ -7,8 +7,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class MainClass {
 
     public static void main(String[] args) {
-        Credentials creds = Credentials.getInstance();
-        creds.read();
+        Credentials credentials = Credentials.getInstance();
+        credentials.read();
         Users users = Users.getInstance();
         users.init();
 

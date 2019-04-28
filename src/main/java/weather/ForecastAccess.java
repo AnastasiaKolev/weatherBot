@@ -6,10 +6,7 @@ import credentials.Credentials;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.MalformedURLException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -19,8 +16,8 @@ public class ForecastAccess extends WeatherAbstract {
     private Credentials creds = Credentials.getInstance();
 
     // for forecast data, Date to text formatter
-    private static final DateTimeFormatter dateFormatterFromDate = DateTimeFormatter.ofPattern( "dd/MM/yyyy" );
-    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern( "HH:mm" );
+    private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern( "dd/MM/yyyy" );
+    private static final DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern( "HH:mm" );
 
     private EmojiService emoji = new EmojiService();
 
@@ -67,23 +64,23 @@ public class ForecastAccess extends WeatherAbstract {
             if (currentForecast.getCod().equals( "200" )) {
                 String cityName = currentForecast.getCity().getName();
                 String countryName = currentForecast.getCity().getCountry();
-
                 String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
 
                 StringBuilder weather = new StringBuilder();
-                weather.append( emojiCity ).append( "\tWeather forecast for " )
-                        .append( cityName ).append( ", " ).append( countryName ).append( "\n" );
+
+                weather.append( emojiCity ).append( "\tWeather forecast for *" )
+                        .append( cityName ).append( ", " ).append( countryName ).append( "*\n" );
 
                 int countDay1 = 0;
                 for (int i = 0; i < currentForecast.getList().size(); i++) {
                     ListForecast weatherForecast = currentForecast.getList().get( i );
 
-                    //getting date from json list
-                    LocalDate day = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
+                    //getting date and time to operate on hourly data
+                    ZonedDateTime date = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.of( "UTC" ) );
+                    ZonedDateTime zonedDateTime = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.of( "UTC" ) );
+
                     //getting 1st date to search for both: 3:00 and 15:00 data
-                    LocalDate day1st = Instant.ofEpochSecond( currentForecast.getList().get( 0 ).getDt() ).atZone( ZoneId.systemDefault() ).toLocalDate();
-                    //getting time to operate on hourly data - 3:00 and 15:00 UTC
-                    LocalDateTime dateTime = Instant.ofEpochSecond( weatherForecast.getDt() ).atZone( ZoneId.systemDefault() ).toLocalDateTime();
+                    ZonedDateTime date1 = Instant.ofEpochSecond( currentForecast.getList().get( 0 ).getDt() ).atZone( ZoneId.of( "UTC" ) );
 
                     Main curMain = weatherForecast.getMain();
                     List<Weather> curWeather = weatherForecast.getWeather();
@@ -98,38 +95,39 @@ public class ForecastAccess extends WeatherAbstract {
                     String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
                     String emojiDate = emoji.getEmojiForWeather( "diamond" ).getUnicode();
 
-                    if (dateFormatterFromDate.format( day ).equals( dateFormatterFromDate.format( day1st ) )) {
-                        if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
+                    if (dateFormat.format( date ).equals( dateFormat.format( date1 ) )) {
+                        if (timeFormat.format( zonedDateTime ).equals( "00:00" )) {
                             weather.append( "\n" ).append( emojiDate )
-                                    .append( "\t" ).append( dateFormatterFromDate.format( day1st ) )
-                                    .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
+                                    .append( "\t*" ).append( dateFormat.format( date1 ) )
+                                    .append( "*\n_Night_: \t" ).append( minTemp ).append( " ºC" )
                                     .append( "\t" ).append( description ).append( "\t" )
                                     .append( emoji == null ? "" : emojiWeather );
                             countDay1++;
-                        } else if (countDay1 == 1 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
-                            weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
+                        } else if (countDay1 == 1 && timeFormat.format( zonedDateTime ).equals( "12:00" )) {
+                            weather.append( "\n_Day_: \t" ).append( maxTemp ).append( " ºC" )
                                     .append( "\t" ).append( description ).append( "\t" )
                                     .append( emoji == null ? "" : emojiWeather )
-                                    .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
-                        } else if (countDay1 == 0 && dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
+                                    .append( "\n_Wind speed_: " ).append( windSpeed ).append( " m/s\n" );
+
+                        } else if (countDay1 == 0 && timeFormat.format( zonedDateTime ).equals( "12:00" )) {
                             weather.append( "\n" ).append( emojiDate )
-                                    .append( "\t" ).append( dateFormatterFromDate.format( day1st ) )
-                                    .append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
+                                    .append( "\t*" ).append( dateFormat.format( date1 ) )
+                                    .append( "*\n_Day_: \t" ).append( maxTemp ).append( " ºC" )
                                     .append( "\t" ).append( description ).append( "\t" )
                                     .append( emoji == null ? "" : emojiWeather )
-                                    .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
+                                    .append( "\n_Wind speed_: " ).append( windSpeed ).append( " m/s\n" );
                         }
-                    } else if (dateTimeFormatter.format( dateTime ).equals( "03:00" )) {
+                    } else if (timeFormat.format( zonedDateTime ).equals( "00:00" )) {
                         weather.append( "\n" ).append( emojiDate )
-                                .append( "\t" ).append( dateFormatterFromDate.format( day ) )
-                                .append( "\nNight: \t" ).append( minTemp ).append( " ºC" )
+                                .append( "\t*" ).append( dateFormat.format( date ) )
+                                .append( "*\n_Night_: \t" ).append( minTemp ).append( " ºC" )
                                 .append( "\t" ).append( description ).append( "\t" )
                                 .append( emoji == null ? "" : emojiWeather );
-                    } else if (dateTimeFormatter.format( dateTime ).equals( "15:00" )) {
-                        weather.append( "\nDay: \t" ).append( maxTemp ).append( " ºC" )
+                    } else if (timeFormat.format( zonedDateTime ).equals( "12:00" )) {
+                        weather.append( "\n_Day_: \t" ).append( maxTemp ).append( " ºC" )
                                 .append( "\t" ).append( description ).append( "\t" )
                                 .append( emoji == null ? "" : emojiWeather )
-                                .append( "\nWind speed: " ).append( windSpeed ).append( " m/s\n" );
+                                .append( "\n_Wind speed_: " ).append( windSpeed ).append( " m/s\n" );
                     }
                 }
                 forecastFound = weather.toString();

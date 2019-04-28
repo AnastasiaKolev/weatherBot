@@ -12,7 +12,7 @@ import java.util.List;
 public class AlertsHandler {
     private Users users;
 
-    public AlertsHandler() {
+    protected AlertsHandler() {
         super();
 
         users = Users.getInstance();
@@ -47,10 +47,11 @@ public class AlertsHandler {
             ForecastAccess forecastAccess = new ForecastAccess();
             String update = forecastAccess.getWeatherForecastString( sub.getLocation(), sub.getLanguage() );
 
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.enableMarkdown( true );
-            sendMessage.setChatId( String.valueOf( sub.getUserId() ) );
-            sendMessage.setText( "Update for your subscription:\n\n" + update );
+            SendMessage sendMessage = new SendMessage()
+                    .enableMarkdown( true )
+                    .setChatId( String.valueOf( sub.getUserId() ) )
+                    .setText( "Update for your subscription:\n\n" + update );
+
             execute( sendMessage );
         }
     }
