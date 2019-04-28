@@ -48,7 +48,7 @@ public class WeatherAccess extends WeatherAbstract {
             weatherSearch( mesText, language );
 
             if (currentWeather.getList().size() == 0) {
-                return "Sorry, city not found.";
+                return "error";
             }
 
             if (currentWeather.getCod().equals( "200" )
@@ -81,9 +81,7 @@ public class WeatherAccess extends WeatherAbstract {
                 return cityFound;
             }
         } catch (IOException e) {
-            // e.printStackTrace();
-            System.out.println( "Нет такого города!" );
-            return "Sorry, city not found.";
+            return "error";
         }
         return "error";
     }

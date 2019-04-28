@@ -58,7 +58,7 @@ public class ForecastAccess extends WeatherAbstract {
             forecastSearch( mesText, language );
 
             if (currentForecast.getCod().equals( "404" )) {
-                return "Sorry, city not found.";
+                return "error";
             }
 
             if (currentForecast.getCod().equals( "200" )) {
@@ -135,9 +135,7 @@ public class ForecastAccess extends WeatherAbstract {
                 return forecastFound;
             }
         } catch (IOException e) {
-            // e.printStackTrace();
-            System.out.println( "Нет такого города!" );
-            return "Sorry, city not found.";
+            return "error";
         }
         return "error";
     }
