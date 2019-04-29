@@ -70,8 +70,8 @@ public class WeatherAccess extends WeatherAbstract {
 
                 //setting emoji
                 String iconId = curWeather.get( 0 ).getIcon();
-                String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
-                String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
+                String emojiWeather = emoji.getEmojiForWeather( iconId );
+                String emojiCity = emoji.getEmojiForWeather( "globe" );
 
                 cityFound = emojiCity + "\tCurrent weather for *" + cityName + ", " + countryName
                         + "*\n_Min_: \t" + minTemp + " ºC"

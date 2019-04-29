@@ -5,6 +5,8 @@ import database.Users;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import weather.ForecastAccess;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class AlertsHandler {
@@ -17,13 +19,15 @@ public class AlertsHandler {
     }
 
     public void startAlertTimers() {
+        LocalDateTime localNow = LocalDateTime.now( Clock.systemUTC());
+
         TimerExecutor currentTimer = new TimerExecutor();
         currentTimer.startExecutionEveryDayAt( new CustomTimerTask() {
             @Override
             public void execute() {
                 sendAlerts();
             }
-        }, 12, 0, 0 );
+        }, localNow.getHour(), localNow.getMinute(), localNow.getSecond() );
     }
 
     private void sendAlerts() {

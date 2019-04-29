@@ -64,7 +64,7 @@ public class ForecastAccess extends WeatherAbstract {
             if (currentForecast.getCod().equals( "200" )) {
                 String cityName = currentForecast.getCity().getName();
                 String countryName = currentForecast.getCity().getCountry();
-                String emojiCity = emoji.getEmojiForWeather( "globe" ).getUnicode();
+                String emojiCity = emoji.getEmojiForWeather( "globe" );
 
                 StringBuilder weather = new StringBuilder();
 
@@ -92,8 +92,8 @@ public class ForecastAccess extends WeatherAbstract {
                     int windSpeed = wind.getSpeed().intValue();
 
                     String iconId = curWeather.get( 0 ).getIcon();
-                    String emojiWeather = emoji.getEmojiForWeather( iconId ).getUnicode();
-                    String emojiDate = emoji.getEmojiForWeather( "diamond" ).getUnicode();
+                    String emojiWeather = emoji.getEmojiForWeather( iconId );
+                    String emojiDate = emoji.getEmojiForWeather( "diamond" );
 
                     if (dateFormat.format( date ).equals( dateFormat.format( date1 ) )) {
                         if (timeFormat.format( zonedDateTime ).equals( "00:00" )) {

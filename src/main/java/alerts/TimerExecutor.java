@@ -35,7 +35,7 @@ public class TimerExecutor {
                 .withSecond(targetSec);
 
         while (localNow.compareTo(localNextTarget.minusSeconds(1)) > 0) {
-            localNextTarget = localNextTarget.plusHours( 1 );
+            localNextTarget = localNextTarget.plusMinutes( 30 );
         }
 
         final Duration duration = Duration.between(localNow, localNextTarget);

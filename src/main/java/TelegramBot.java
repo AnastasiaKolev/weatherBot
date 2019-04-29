@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import weather.EmojiService;
 import weather.ForecastAccess;
 import weather.WeatherAccess;
 
@@ -20,6 +21,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String token;
     private String username;
     private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
+    private EmojiService emoji = new EmojiService();
 
     TelegramBot() {
         super();
@@ -60,21 +62,32 @@ public class TelegramBot extends TelegramLongPollingBot {
                     + currentUser.getSubscription() + "\t"
                     + "Message: " + mesText );
 
-            String helpText = "Here, buttons at your disposal:"
-                    + "\n*Current* weather: enter the city"
-                    + "\n*Forecast*: data on 5 days ahead"
-                    + "\n*Language*: for description only"
-                    + "\n*Subscribe to daily alerts*: get forecast once a day"
-                    + "\n*Unsubscribe*: cancel daily subscription";
+            String eBall = emoji.getEmojiForWeather( "ball" );
+            String eSet = emoji.getEmojiForWeather( "satellite" );
+            String eLang = emoji.getEmojiForWeather( "lang" );
+            String eAlert = emoji.getEmojiForWeather( "alert" );
+            String eUnsub = emoji.getEmojiForWeather( "noSub" );
+
+            String helpText = "Here, buttons at your disposal:\n"
+                    + eSet + " *Current*: weather state for city input\n"
+                    + eBall + " *Forecast*: data on 5 days ahead\n"
+                    + eLang + " *Language*: applied to description only\n"
+                    + eAlert + " *Subscribe to daily alerts*: sends forecast for the chosen city\n"
+                    + eUnsub + " *Unsubscribe*: cancel the subscription"
+                    + "\n\nДоступные кнопки:\n"
+                    + eSet + " *Текущее*: состояние погоды в ответ на город\n"
+                    + eBall + " *Прогноз*: на 5 дней\n"
+                    + eLang + " *Язык*: применяется только для описания погоды\n"
+                    + eAlert + " *Подписаться на ежедневные оповещения*: прогноз для выбранного города\n"
+                    + eUnsub + " *Отписаться*: отменить подписку";
 
             String cityRequest = "What city are you interested in?\tFor instance, you can enter: _London_ or _London,GB_."
                     + "\n\nКакой город вас интересует?\tНапример: _Санкт-Петербург_.";
 
             String greetingsText = "Howdy, *" + message.getFrom().getFirstName()
-                    + "*\nI'll be glad to inform you about the weather in your city!"
+                    + "*\nI'll be glad to inform you about the weather in your city! Check *Help* button for options."
                     + "\n\nПриветствую, *" + message.getFrom().getFirstName()
-                    + "*!\nБуду рад рассказать о погоде в вашем городе!\n\n"
-                    + cityRequest;
+                    + "*!\nБуду рад рассказать о погоде в вашем городе! Нажми кнопку *Help*, чтобы узнать об опциях.\n\n";
 
             String languageChoiceText = "Choose language. _Note_: This option is applicable only to the weather *description*."
                     + "\n\nВыберите язык. _Примечание_: Этот параметр применяется только к *описанию* погоды. ";
@@ -237,12 +250,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 System.out.println( "Нет такого города!" );
             } else {
                 sendMsg( message, result );
-
-                String forecastOptText = "Want to learn more on 5 days forecast? Try *forecast* button."
-                        + "\n\nХочешь узнать прогноз на 5 дней? Нажми на кнопку *forecast*.";
-
-                SendMessage cityInput = getSendMessage( message, forecastOptText );
-                keyboardSettings( cityInput );
             }
         } );
         thread.start();
@@ -260,12 +267,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 System.out.println( "Нет такого города!" );
             } else {
                 sendMsg( message, result );
-
-                String moreCitiesText = "Want more? Go ahead and type other city!" +
-                        "\n\nХочешь больше погоды? Введи другой город.";
-
-                SendMessage forecast = getSendMessage( message, moreCitiesText );
-                keyboardSettings( forecast );
             }
         } );
         thread.start();
@@ -318,7 +319,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         langKeyboard.add( langRow2 );
 
         langReplyKeyboardMarkup.setKeyboard( langKeyboard )
-                .setResizeKeyboard( true );
+                .setResizeKeyboard( true )
+                .setOneTimeKeyboard( false );
 
         message.setReplyMarkup( langReplyKeyboardMarkup );
         try {
