@@ -60,6 +60,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                     + currentUser.getSubscription() + "\t"
                     + "Message: " + mesText );
 
+            String helpText = "Here, buttons at your disposal:"
+                    + "\n*Current* weather: enter the city"
+                    + "\n*Forecast*: data on 5 days ahead"
+                    + "\n*Language*: for description only"
+                    + "\n*Subscribe to daily alerts*: get forecast once a day"
+                    + "\n*Unsubscribe*: cancel daily subscription";
+
             String cityRequest = "What city are you interested in?\tFor instance, you can enter: _London_ or _London,GB_."
                     + "\n\nКакой город вас интересует?\tНапример: _Санкт-Петербург_.";
 
@@ -83,19 +90,17 @@ public class TelegramBot extends TelegramLongPollingBot {
                     + "*\n\n*" + currentUser.getFirstName()
                     + "* поздравляю, Вы подписались на ежедневные обновления для города: *" + mesText + "*";
 
+            String subNoSuccessText = "*" +currentUser.getFirstName()
+                    + "* you have already subscribed for the city: *" + currentUser.getLocation()
+                    + "*\nTo change city - Unsubscribe first!\n\n*" + currentUser.getFirstName()
+                    + "* вы уже подписались на обновления для города: *" + currentUser.getLocation()
+                    + "*\nЧтобы изменить город, сначала нажмите на Unsubscribe.";
+
             if (mesText.equals( "/start" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
                 SendMessage greetings = getSendMessage( message, greetingsText );
                 keyboardSettings( greetings );
-                return;
-            }
-
-            if (mesText.equals( "Language" )) {
-                mode = AbilityMessageCodes.MODE_SELECT_LANGUAGE;
-
-                SendMessage languageChoice = getSendMessage( message, languageChoiceText );
-                languageSettings( languageChoice );
                 return;
             }
 
@@ -117,6 +122,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
+            if (mesText.equals( "Language" )) {
+                mode = AbilityMessageCodes.MODE_SELECT_LANGUAGE;
+
+                SendMessage languageChoice = getSendMessage( message, languageChoiceText );
+                languageSettings( languageChoice );
+                return;
+            }
+
             if (mesText.equals( "Back" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
@@ -125,7 +138,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            if (mesText.equals( "Subscribe to daily Updates" )) {
+            if (mesText.equals( "Help" )) {
+                SendMessage help = getSendMessage( message, helpText );
+                keyboardSettings( help );
+                return;
+            }
+
+            if (mesText.equals( "Subscribe to daily alerts" )) {
                 mode = AbilityMessageCodes.MODE_SELECT_SUBSCRIBE;
 
                 SendMessage subscribe = getSendMessage( message, subscribeText );
@@ -179,14 +198,22 @@ public class TelegramBot extends TelegramLongPollingBot {
                     mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
                     if (!currentUser.getLocation().equals( mesText )) {
-                        currentUser.setSubscription( true );
-                        currentUser.setLocation( mesText );
-                        users.saveToDB();
-                    }
+                        if(currentUser.getSubscription().equals( true )
+                                && !currentUser.getLocation().equals( mesText )){
+                            SendMessage unsubFirst = getSendMessage( message, subNoSuccessText );
+                            keyboardSettings( unsubFirst );
+                        }
+                        else {
+                            currentUser.setSubscription( true );
+                            currentUser.setLocation( mesText );
+                            users.saveToDB();
 
-                    SendMessage subscriptionSuccess = getSendMessage( message, subscriptionSuccessText );
-                    keyboardSettings( subscriptionSuccess );
+                            SendMessage subscriptionSuccess = getSendMessage( message, subscriptionSuccessText );
+                            keyboardSettings( subscriptionSuccess );
+                        }
+                    }
                 }
+                return;
             }
         }
     }
@@ -256,7 +283,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         mainKeyboard.add( mainRow1 );
 
         KeyboardRow mainRow2 = new KeyboardRow();
-        mainRow2.add( "Subscribe to daily Updates" );
+        mainRow2.add( "Subscribe to daily alerts" );
         mainRow2.add( "Unsubscribe" );
         mainRow2.add( "Help" );
         mainKeyboard.add( mainRow2 );
