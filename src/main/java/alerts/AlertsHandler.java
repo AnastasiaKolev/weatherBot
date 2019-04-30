@@ -3,6 +3,7 @@ package alerts;
 import database.User;
 import database.Users;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import weather.EmojiService;
 import weather.ForecastAccess;
 
 import java.time.Clock;
@@ -11,6 +12,7 @@ import java.util.List;
 
 public class AlertsHandler {
     private Users users;
+    private EmojiService emoji = new EmojiService();
 
     protected AlertsHandler() {
         super();
@@ -19,7 +21,7 @@ public class AlertsHandler {
     }
 
     public void startAlertTimers() {
-        LocalDateTime localNow = LocalDateTime.now( Clock.systemUTC());
+        final LocalDateTime localNow = LocalDateTime.now( Clock.systemUTC());
 
         TimerExecutor currentTimer = new TimerExecutor();
         currentTimer.startExecutionEveryDayAt( new CustomTimerTask() {
@@ -42,21 +44,22 @@ public class AlertsHandler {
                 }
             }
 
-            System.out.println( "Update for " + sub.getFirstName() + " location = " + sub.getLocation() + " lang = " + sub.getLanguage() );
+            System.out.println( "Alert for " + sub.getFirstName() + " location = " + sub.getLocation() + " lang = " + sub.getLanguage() );
 
             ForecastAccess forecastAccess = new ForecastAccess();
             String update = forecastAccess.getWeatherForecastString( sub.getLocation(), sub.getLanguage() );
+            String eAlert = emoji.getEmojiForWeather( "alert" );
 
             SendMessage sendMessage = new SendMessage()
                     .enableMarkdown( true )
                     .setChatId( String.valueOf( sub.getUserId() ) )
-                    .setText( "Update for your subscription:\n\n" + update );
+                    .setText( eAlert + " Subscription alert:\n\n" + update );
 
-            execute( sendMessage );
+            executeAlert( sendMessage );
         }
     }
 
-    public void execute(SendMessage msg) {
+    public void executeAlert(SendMessage msg) {
 
     }
 }

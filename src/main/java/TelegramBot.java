@@ -37,8 +37,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void startAlerts() {
         AlertsHandler alerts = new AlertsHandler() {
             @Override
-            public void execute(SendMessage msg) {
-                execute( msg );
+            public void executeAlert(SendMessage msg) {
+                try {
+                    execute( msg );
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
             }
         };
         alerts.startAlertTimers();
@@ -226,7 +230,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                         }
                     }
                 }
-                return;
             }
         }
     }

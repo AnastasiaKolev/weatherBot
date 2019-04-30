@@ -7,8 +7,5 @@ package alerts;
  */
 public abstract class CustomTimerTask {
 
-    /**
-     * @abstract Should contain the functionality of the task
-     */
     public abstract void execute();
 }

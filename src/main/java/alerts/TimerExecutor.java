@@ -26,6 +26,7 @@ public class TimerExecutor {
         executorService.schedule(taskWrapper, delay, TimeUnit.SECONDS);
     }
 
+    //TEST MODE: Alerts send each 2 minute
     private long computeNextDelay(int targetHour, int targetMin, int targetSec) {
         final LocalDateTime localNow = LocalDateTime.now(Clock.systemUTC());
 
@@ -34,8 +35,8 @@ public class TimerExecutor {
                 .withMinute(targetMin)
                 .withSecond(targetSec);
 
-        while (localNow.compareTo(localNextTarget.minusSeconds(1)) > 0) {
-            localNextTarget = localNextTarget.plusMinutes( 30 );
+        while (localNow.compareTo(localNextTarget) >= 0) {
+            localNextTarget = localNextTarget.plusMinutes( 2 );
         }
 
         final Duration duration = Duration.between(localNow, localNextTarget);
