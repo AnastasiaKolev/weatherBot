@@ -247,7 +247,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     //getting forecast result
     private void getWeatherForecast(Message message, String mesText, String language) {
         Thread thread = new Thread(() -> {
-            ForecastAccess forecastAccess = new ForecastAccess();
+            ForecastAccess forecastAccess = new ForecastAccess(); // todo: see WeatherAccess refactoring
             String result = forecastAccess.getWeatherForecastString(mesText, language);
 
             if (result.equals("error")) {
