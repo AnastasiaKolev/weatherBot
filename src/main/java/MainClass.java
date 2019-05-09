@@ -1,6 +1,5 @@
 import alerts.AlertsHandler;
 import credentials.Credentials;
-import database.Users;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -22,9 +21,6 @@ public class MainClass {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-
-
-
     }
 
     private static void startAlerts(TelegramBot bot) {
