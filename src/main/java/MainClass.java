@@ -9,8 +9,6 @@ public class MainClass {
     public static void main(String[] args) {
         Credentials credentials = Credentials.getInstance();
         credentials.read();
-        Users users = Users.getInstance();
-        users.init();
 
         ApiContextInitializer.init();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
