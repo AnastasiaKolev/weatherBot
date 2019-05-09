@@ -31,21 +31,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.token = credentials.getBotToken();
         this.username = credentials.getBotUsername();
 
-        startAlerts();
-    }
 
-    private void startAlerts() {
-        AlertsHandler alerts = new AlertsHandler() {
-            @Override
-            public void executeAlert(SendMessage msg) {
-                try {
-                    execute( msg );
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        alerts.startAlertTimers();
     }
 
     public void onUpdateReceived(Update update) {
