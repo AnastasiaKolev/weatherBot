@@ -5,7 +5,6 @@ import credentials.Credentials;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.net.MalformedURLException;
 import java.util.List;
 
 public class WeatherAccess extends WeatherAbstract {

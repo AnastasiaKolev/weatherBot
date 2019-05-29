@@ -1,4 +1,3 @@
-import alerts.AlertsHandler;
 import credentials.Credentials;
 import database.User;
 import database.Users;
@@ -9,10 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import weather.EmojiService;
-import weather.ForecastAccess;
-import weather.WeatherAccess;
-import weather.WeatherData;
+import weather.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +20,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
     private EmojiService emoji = new EmojiService();
     private WeatherAccess weatherAccess = new WeatherAccess();
+    private ForecastAccess forecastAccess = new ForecastAccess();
 
     TelegramBot() {
         super();
@@ -247,8 +244,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     //getting forecast result
     private void getWeatherForecast(Message message, String mesText, String language) {
         Thread thread = new Thread(() -> {
-            ForecastAccess forecastAccess = new ForecastAccess(); // todo: see WeatherAccess refactoring
-            String result = forecastAccess.getWeatherForecastString(mesText, language);
+            ForecastData forecastData = forecastAccess.forecastSearch(mesText, language); // todo: see WeatherAccess refactoring
+            String result = forecastAccess.formatWeatherForecast(forecastData);
 
             if (result.equals("error")) {
                 sendMsg(message, "Sorry, city not found. Try other city." +
