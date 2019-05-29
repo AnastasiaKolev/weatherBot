@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import weather.EmojiService;
 import weather.ForecastAccess;
 import weather.WeatherAccess;
+import weather.WeatherData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String username;
     private String mode = AbilityMessageCodes.MODE_SELECT_CITY;
     private EmojiService emoji = new EmojiService();
+    private WeatherAccess weatherAccess = new WeatherAccess();
 
     TelegramBot() {
         super();
@@ -30,47 +32,31 @@ public class TelegramBot extends TelegramLongPollingBot {
         Credentials credentials = Credentials.getInstance();
         this.token = credentials.getBotToken();
         this.username = credentials.getBotUsername();
-
-        startAlerts();
-    }
-
-    private void startAlerts() {
-        AlertsHandler alerts = new AlertsHandler() {
-            @Override
-            public void executeAlert(SendMessage msg) {
-                try {
-                    execute( msg );
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        alerts.startAlertTimers();
     }
 
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
         String mesText = message.getText();
 
-        User currentUser = users.getUser( message.getFrom().getId()
+        User currentUser = users.getUser(message.getFrom().getId()
                 , message.getFrom().getFirstName()
                 , message.getFrom().getLanguageCode()
                 , "null"
-                , false );
+                , false);
 
         if (message.hasText()) {
-            System.out.println( message.getFrom().getFirstName() + "\t"
+            System.out.println(message.getFrom().getFirstName() + "\t"
                     + currentUser.getUserId() + "\t"
                     + currentUser.getLanguage() + "\t"
                     + currentUser.getLocation() + "\t"
                     + currentUser.getSubscription() + "\t"
-                    + "Message: " + mesText );
+                    + "Message: " + mesText);
 
-            String eBall = emoji.getEmojiForWeather( "ball" );
-            String eSet = emoji.getEmojiForWeather( "satellite" );
-            String eLang = emoji.getEmojiForWeather( "lang" );
-            String eAlert = emoji.getEmojiForWeather( "alert" );
-            String eUnsub = emoji.getEmojiForWeather( "noSub" );
+            String eBall = emoji.getEmojiForWeather("ball");
+            String eSet = emoji.getEmojiForWeather("satellite");
+            String eLang = emoji.getEmojiForWeather("lang");
+            String eAlert = emoji.getEmojiForWeather("alert");
+            String eUnsub = emoji.getEmojiForWeather("noSub");
 
             String helpText = "Here, buttons at your disposal:\n"
                     + eSet + " *Current*: weather state for city input\n"
@@ -102,131 +88,130 @@ public class TelegramBot extends TelegramLongPollingBot {
             String unsubscribeText = "You have successfully *unsubscribed*."
                     + "\n\nВы успешно отписались.\n";
 
-            String subscriptionSuccessText = "*" +currentUser.getFirstName()
+            String subscriptionSuccessText = "*" + currentUser.getFirstName()
                     + "* congrats, you have subscribed to daily updates for the city: *" + mesText
                     + "*\n\n*" + currentUser.getFirstName()
                     + "* поздравляю, Вы подписались на ежедневные обновления для города: *" + mesText + "*";
 
-            String subNoSuccessText = "*" +currentUser.getFirstName()
+            String subNoSuccessText = "*" + currentUser.getFirstName()
                     + "* you have already subscribed for the city: *" + currentUser.getLocation()
                     + "*\nTo change city - Unsubscribe first!\n\n*" + currentUser.getFirstName()
                     + "* вы уже подписались на обновления для города: *" + currentUser.getLocation()
                     + "*\nЧтобы изменить город, сначала нажмите на Unsubscribe.";
 
-            if (mesText.equals( "/start" )) {
+            if (mesText.equals("/start")) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
-                SendMessage greetings = getSendMessage( message, greetingsText );
-                keyboardSettings( greetings );
+                SendMessage greetings = getSendMessage(message, greetingsText);
+                keyboardSettings(greetings);
                 return;
             }
 
             //In case of input, not a keyboard option
-            if (mesText.equals( "Current" ) || mesText.equals( "city" )) {
+            if (mesText.equals("Current") || mesText.equals("city")) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
-                SendMessage cityInput = getSendMessage( message, cityRequest );
-                keyboardSettings( cityInput );
+                SendMessage cityInput = getSendMessage(message, cityRequest);
+                keyboardSettings(cityInput);
                 return;
             }
 
             //new forecast
-            if (mesText.equals( "Forecast" )) {
+            if (mesText.equals("Forecast")) {
                 mode = AbilityMessageCodes.MODE_SELECT_FORECAST;
 
-                SendMessage forecast = getSendMessage( message, cityRequest );
-                keyboardSettings( forecast );
+                SendMessage forecast = getSendMessage(message, cityRequest);
+                keyboardSettings(forecast);
                 return;
             }
 
-            if (mesText.equals( "Language" )) {
+            if (mesText.equals("Language")) {
                 mode = AbilityMessageCodes.MODE_SELECT_LANGUAGE;
 
-                SendMessage languageChoice = getSendMessage( message, languageChoiceText );
-                languageSettings( languageChoice );
+                SendMessage languageChoice = getSendMessage(message, languageChoiceText);
+                languageSettings(languageChoice);
                 return;
             }
 
-            if (mesText.equals( "Back" )) {
+            if (mesText.equals("Back")) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
-                SendMessage back = getSendMessage( message, cityRequest );
-                keyboardSettings( back );
+                SendMessage back = getSendMessage(message, cityRequest);
+                keyboardSettings(back);
                 return;
             }
 
-            if (mesText.equals( "Help" )) {
-                SendMessage help = getSendMessage( message, helpText );
-                keyboardSettings( help );
+            if (mesText.equals("Help")) {
+                SendMessage help = getSendMessage(message, helpText);
+                keyboardSettings(help);
                 return;
             }
 
-            if (mesText.equals( "Subscribe to daily alerts" )) {
+            if (mesText.equals("Subscribe to daily alerts")) {
                 mode = AbilityMessageCodes.MODE_SELECT_SUBSCRIBE;
 
-                SendMessage subscribe = getSendMessage( message, subscribeText );
-                keyboardSettings( subscribe );
+                SendMessage subscribe = getSendMessage(message, subscribeText);
+                keyboardSettings(subscribe);
                 return;
             }
 
-            if (mesText.equals( "Unsubscribe" )) {
-                currentUser.setSubscription( false );
+            if (mesText.equals("Unsubscribe")) {
+                currentUser.setSubscription(false);
                 users.saveToDB();
 
-                SendMessage unsubscribe = getSendMessage( message, unsubscribeText );
-                keyboardSettings( unsubscribe );
+                SendMessage unsubscribe = getSendMessage(message, unsubscribeText);
+                keyboardSettings(unsubscribe);
                 return;
             }
 
             //basic mode
-            if (mode.equals( AbilityMessageCodes.MODE_SELECT_CITY )) {
-                getWeather( message, mesText, currentUser.getLanguage() );
+            if (mode.equals(AbilityMessageCodes.MODE_SELECT_CITY)) {
+                getWeather(message, mesText, currentUser.getLanguage());
                 return;
             }
 
             //forecast mode
-            if (mode.equals( AbilityMessageCodes.MODE_SELECT_FORECAST )) {
-                getWeatherForecast( message, mesText, currentUser.getLanguage() );
+            if (mode.equals(AbilityMessageCodes.MODE_SELECT_FORECAST)) {
+                getWeatherForecast(message, mesText, currentUser.getLanguage());
                 return;
             }
 
             //language mode
-            if (mode.equals( AbilityMessageCodes.MODE_SELECT_LANGUAGE )) {
+            if (mode.equals(AbilityMessageCodes.MODE_SELECT_LANGUAGE)) {
                 mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
-                currentUser.setLanguage( mesText );
+                currentUser.setLanguage(mesText);
                 users.saveToDB();
 
-                SendMessage modeLang = getSendMessage( message, cityRequest );
-                keyboardSettings( modeLang );
+                SendMessage modeLang = getSendMessage(message, cityRequest);
+                keyboardSettings(modeLang);
                 return;
             }
 
             //subscribe mode
-            if (mode.equals( AbilityMessageCodes.MODE_SELECT_SUBSCRIBE )) {
-                WeatherAccess weatherAccess = new WeatherAccess();
-                String result = weatherAccess.getWeatherString( mesText, currentUser.getLanguage() );
+            if (mode.equals(AbilityMessageCodes.MODE_SELECT_SUBSCRIBE)) {
+                WeatherData weatherData = weatherAccess.weatherSearch(mesText, currentUser.getLanguage());
+                String result = weatherAccess.formatWeatherData(weatherData);
 
-                if (result.equals( "error" )) {
+                if (result.equals("error")) {
                     mode = AbilityMessageCodes.MODE_SELECT_SUBSCRIBE;
 
-                    sendMsg( message, "Enter correct city, please." );
+                    sendMsg(message, "Enter correct city, please.");
                 } else {
                     mode = AbilityMessageCodes.MODE_SELECT_CITY;
 
-                    if (!currentUser.getLocation().equals( mesText )) {
-                        if(currentUser.getSubscription().equals( true )
-                                && !currentUser.getLocation().equals( mesText )){
-                            SendMessage unsubFirst = getSendMessage( message, subNoSuccessText );
-                            keyboardSettings( unsubFirst );
-                        }
-                        else {
-                            currentUser.setSubscription( true );
-                            currentUser.setLocation( mesText );
+                    if (!currentUser.getLocation().equals(mesText)) {
+                        if (currentUser.getSubscription().equals(true)
+                                && !currentUser.getLocation().equals(mesText)) {
+                            SendMessage unsubFirst = getSendMessage(message, subNoSuccessText);
+                            keyboardSettings(unsubFirst);
+                        } else {
+                            currentUser.setSubscription(true);
+                            currentUser.setLocation(mesText);
                             users.saveToDB();
 
-                            SendMessage subscriptionSuccess = getSendMessage( message, subscriptionSuccessText );
-                            keyboardSettings( subscriptionSuccess );
+                            SendMessage subscriptionSuccess = getSendMessage(message, subscriptionSuccessText);
+                            keyboardSettings(subscriptionSuccess);
                         }
                     }
                 }
@@ -236,42 +221,43 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private SendMessage getSendMessage(Message message, String text) {
         return new SendMessage()
-                .enableMarkdown( true )
-                .setChatId( message.getChatId().toString() )
-                .setText( text );
+                .enableMarkdown(true)
+                .setChatId(message.getChatId().toString())
+                .setText(text);
     }
 
     //getting weather result
     private void getWeather(Message message, String mesText, String language) {
-        Thread thread = new Thread( () -> {
-            WeatherAccess weatherAccess = new WeatherAccess();
-            String result = weatherAccess.getWeatherString( mesText, language );
+        Thread thread = new Thread(() -> {
 
-            if (result.equals( "error" )) {
-                sendMsg( message, "Sorry, city not found. Try other city." +
-                        "\n\nГород не найден. Введите другой." );
-                System.out.println( "Нет такого города!" );
+            WeatherData weatherData = weatherAccess.weatherSearch(mesText, language);
+            String result = weatherAccess.formatWeatherData(weatherData);
+
+            if (result.equals("error")) {
+                sendMsg(message, "Sorry, city not found. Try other city." +
+                        "\n\nГород не найден. Введите другой.");
+                System.out.println("Нет такого города!");
             } else {
-                sendMsg( message, result );
+                sendMsg(message, result);
             }
-        } );
+        });
         thread.start();
     }
 
     //getting forecast result
     private void getWeatherForecast(Message message, String mesText, String language) {
-        Thread thread = new Thread( () -> {
-            ForecastAccess forecastAccess = new ForecastAccess();
-            String result = forecastAccess.getWeatherForecastString( mesText, language );
+        Thread thread = new Thread(() -> {
+            ForecastAccess forecastAccess = new ForecastAccess(); // todo: see WeatherAccess refactoring
+            String result = forecastAccess.getWeatherForecastString(mesText, language);
 
-            if (result.equals( "error" )) {
-                sendMsg( message, "Sorry, city not found. Try other city." +
-                        "\n\nГород не найден. Введите другой." );
-                System.out.println( "Нет такого города!" );
+            if (result.equals("error")) {
+                sendMsg(message, "Sorry, city not found. Try other city." +
+                        "\n\nГород не найден. Введите другой.");
+                System.out.println("Нет такого города!");
             } else {
-                sendMsg( message, result );
+                sendMsg(message, result);
             }
-        } );
+        });
         thread.start();
     }
 
@@ -281,24 +267,24 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> mainKeyboard = new ArrayList<>();
 
         KeyboardRow mainRow1 = new KeyboardRow();
-        mainRow1.add( "Current" );
-        mainRow1.add( "Forecast" );
-        mainRow1.add( "Language" );
-        mainKeyboard.add( mainRow1 );
+        mainRow1.add("Current");
+        mainRow1.add("Forecast");
+        mainRow1.add("Language");
+        mainKeyboard.add(mainRow1);
 
         KeyboardRow mainRow2 = new KeyboardRow();
-        mainRow2.add( "Subscribe to daily alerts" );
-        mainRow2.add( "Unsubscribe" );
-        mainRow2.add( "Help" );
-        mainKeyboard.add( mainRow2 );
+        mainRow2.add("Subscribe to daily alerts");
+        mainRow2.add("Unsubscribe");
+        mainRow2.add("Help");
+        mainKeyboard.add(mainRow2);
 
-        mainReplyKeyboardMarkup.setKeyboard( mainKeyboard )
-                .setResizeKeyboard( true )
-                .setOneTimeKeyboard( true );
+        mainReplyKeyboardMarkup.setKeyboard(mainKeyboard)
+                .setResizeKeyboard(true)
+                .setOneTimeKeyboard(true);
 
-        message.setReplyMarkup( mainReplyKeyboardMarkup );
+        message.setReplyMarkup(mainReplyKeyboardMarkup);
         try {
-            execute( message );
+            execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
@@ -310,24 +296,24 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> langKeyboard = new ArrayList<>();
 
         KeyboardRow langRow1 = new KeyboardRow();
-        langRow1.add( "en" );
-        langRow1.add( "fr" );
-        langRow1.add( "ru" );
-        langKeyboard.add( langRow1 );
+        langRow1.add("en");
+        langRow1.add("fr");
+        langRow1.add("ru");
+        langKeyboard.add(langRow1);
 
         KeyboardRow langRow2 = new KeyboardRow();
-        langRow2.add( "de" );
-        langRow2.add( "es" );
-        langRow2.add( "Back" );
-        langKeyboard.add( langRow2 );
+        langRow2.add("de");
+        langRow2.add("es");
+        langRow2.add("Back");
+        langKeyboard.add(langRow2);
 
-        langReplyKeyboardMarkup.setKeyboard( langKeyboard )
-                .setResizeKeyboard( true )
-                .setOneTimeKeyboard( false );
+        langReplyKeyboardMarkup.setKeyboard(langKeyboard)
+                .setResizeKeyboard(true)
+                .setOneTimeKeyboard(false);
 
-        message.setReplyMarkup( langReplyKeyboardMarkup );
+        message.setReplyMarkup(langReplyKeyboardMarkup);
         try {
-            execute( message );
+            execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
@@ -335,12 +321,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void sendMsg(Message message, String text) {
         SendMessage sendMessage = new SendMessage()
-                .enableMarkdown( true )
-                .setChatId( message.getChatId().toString() )
-                .setReplyToMessageId( message.getMessageId() )
-                .setText( text );
+                .enableMarkdown(true)
+                .setChatId(message.getChatId().toString())
+                .setReplyToMessageId(message.getMessageId())
+                .setText(text);
         try {
-            execute( sendMessage );
+            execute(sendMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

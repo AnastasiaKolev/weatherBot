@@ -23,13 +23,14 @@ public class Users {
                 localInstance = instance;
                 if (localInstance == null) {
                     instance = localInstance = new Users();
+                    instance.init();
                 }
             }
         }
         return localInstance;
     }
 
-    public void init() {
+    private void init() {
         try {
             // create a database connection
             connection = DriverManager.getConnection( "jdbc:sqlite:db/db.db" );
