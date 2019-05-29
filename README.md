@@ -1,5 +1,6 @@
 # weatherBot
-Weather bot by Stacy
+
+Bot in telegram - @WeatherBotByStasey_bot
 
 Bot sends current weather or forecast in response to user's city input.
 
