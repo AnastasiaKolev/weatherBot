@@ -5,6 +5,7 @@ import database.Users;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import weather.EmojiService;
 import weather.ForecastAccess;
+import weather.ForecastData;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.util.List;
 public class AlertsHandler {
     private Users users;
     private EmojiService emoji = new EmojiService();
+    private ForecastAccess forecastAccess = new ForecastAccess();
 
     protected AlertsHandler() {
         super();
@@ -46,14 +48,14 @@ public class AlertsHandler {
 
             System.out.println( "Alert for " + sub.getFirstName() + " location = " + sub.getLocation() + " lang = " + sub.getLanguage() );
 
-            ForecastAccess forecastAccess = new ForecastAccess();
-            String update = forecastAccess.getWeatherForecastString( sub.getLocation(), sub.getLanguage() );
+            ForecastData forecastData = forecastAccess.forecastSearch(sub.getLocation(), sub.getLanguage());
+            String result = forecastAccess.formatWeatherForecast(forecastData);
             String eAlert = emoji.getEmojiForWeather( "alert" );
 
             SendMessage sendMessage = new SendMessage()
                     .enableMarkdown( true )
                     .setChatId( String.valueOf( sub.getUserId() ) )
-                    .setText( eAlert + " Subscription alert:\n\n" + update );
+                    .setText( eAlert + " Subscription alert:\n\n" + result );
 
             executeAlert( sendMessage );
         }
