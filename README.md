@@ -7,7 +7,7 @@ Bot sends current weather or forecast in response to user's city input.
 Capabilities of the bot: 
 - current weather;
 - forecast;
-- subscription to daily alerts.
+- subscription to daily alerts (<b>TEST MODE</b>: alerts sent each 2 mins)
 
 Main classes:
 - MainClass: main method, enables the bot;
