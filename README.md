@@ -2,6 +2,8 @@
 
 Bot in telegram - @WeatherBotByStasey_bot
 
+![](Screen Shot 2019-09-03 at 15.57.19.png)
+
 Bot sends current weather or forecast in response to user's city input.
 
 Capabilities of the bot: 
